@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# build outputs
+dist/
+build/
+
+# environment
+.env
+.env.local
+
+# system files
+.DS_Store
+.vscode/
