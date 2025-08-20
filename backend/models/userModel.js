@@ -16,6 +16,10 @@ const userSchema = new Schema({
     enum: ['lecturer', 'student'],
     required: true
   },
+  
+  enrolledCourses : [{ type: mongoose.Schema.Types.ObjectId, ref: "Course"}], // student
+  teachingCourses : [{ type: mongoose.Schema.Types.ObjectId, ref: "Course"}], // lecturer
+
   courses: {
     type: [String],
     default: []

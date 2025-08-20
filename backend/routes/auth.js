@@ -1,71 +1,77 @@
-const express = require('express');
+
+const express = require("express");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("../models/userModel");
+
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
 
-// helper to sign JWT and shape response
-function toAuthResponse(user) {
-  const payload = { _id: user._id.toString(), email: user.email, name: user.name, role: user.role };
-  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
-  return { token, user: payload };
-}
-
-// Register (returns token+user so you can log in right away)
-router.post('/register', async (req, res) => {
+// REGISTER
+router.post("/register", async (req, res) => {
   try {
-    const { name, email, role, password } = req.body;
-    if (!name || !email || !role || !password) {
-      return res.status(400).json({ error: 'name, email, role, password required' });
+    const { name, email, password } = req.body;
+
+    // check if user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ msg: "User already exists" });
     }
-    let user = await User.findOne({ email });
-    if (user) return res.status(400).json({ error: 'User already exists' });
 
+    // hash password
     const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    user = await User.create({ name, email, role, passwordHash });
+    // create new user
+    const newUser = new User({
+      name,
+      email,
+      passwordHash : hashedPassword,
+    });
 
-    res.status(201).json(toAuthResponse(user));
+    await newUser.save();
+
+    // return token
+    const token = jwt.sign(
+      { id: newUser._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.json({ token, user: { id: newUser._id, name: newUser.name, email: newUser.email } });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error(err.message);
+    res.status(500).send("Server error");
   }
 });
 
-// Login
-router.post('/login', async (req, res) => {
+// LOGIN
+router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // check user
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ error: 'Invalid email or password' });
+    if (!user) {
+      return res.status(400).json({ msg: "Invalid credentials" });
+    }
 
-    const ok = await bcrypt.compare(password, user.passwordHash || '');
-    if (!ok) return res.status(400).json({ error: 'Invalid email or password' });
+    // compare passwords
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      return res.status(400).json({ msg: "Invalid credentials" });
+    }
 
-    const payload = { _id: user._id.toString(), email: user.email, name: user.name, role: user.role };
-    const token = require('jsonwebtoken').sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
-    return res.json({ token, user: payload });
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ error: 'Server error' });
-  }
-});
+    // return token
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
-
-// Quick health-check
-router.get('/register', (req, res) => res.send('Auth route works!'));
-
-// Me (optional helper to verify tokens in Postman)
-router.get('/me', (req, res) => {
-  try {
-    const hdr = req.headers.authorization || '';
-    const token = hdr.startsWith('Bearer ') ? hdr.slice(7) : null;
-    if (!token) return res.status(401).json({ error: 'No token' });
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    res.json({ user: payload });
-  } catch {
-    res.status(401).json({ error: 'Invalid token' });
+    res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
   }
 });
 
