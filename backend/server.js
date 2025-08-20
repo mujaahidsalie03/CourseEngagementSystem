@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const courseRoutes = require('./routes/courseRoutes');
+const quizSessionRoutes = require('./routes/quizSessionRoutes');
+const responseRoutes = require('./routes/responseRoutes');
+const quizRoutes = require('./routes/quizRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -12,6 +15,10 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes); // Tell Express to use your course routes
+app.use('/api/quizSessions', quizSessionRoutes);
+app.use('/api/responses', responseRoutes);
+app.use('/api/quizzes', quizRoutes);
+
 
 mongoose.connect(process.env.MONGO_URI, 
     {
