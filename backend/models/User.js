@@ -17,7 +17,8 @@ const userSchema = new Schema({
     required: true
   },
   courses: {
-    type: [String],
+    type: [Schema.Types.ObjectId],
+    ref: 'Course',
     default: []
   },
   passwordHash: {

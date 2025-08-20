@@ -13,7 +13,7 @@ const create = async (courseData) => {
 };
 
 //Finds all courses associated with a given user ID (either as a lecturer or a student).
-const findByUserId = async (userID) => {
+const findByUserId = async (userId) => {
     // Find all courses where the user's ID is the lecturerId OR is present in the students array
     const courses = await Course.find({
     $or: [

@@ -12,7 +12,7 @@ const courseSchema = new Schema({
         required: true,
         trim: true
     },
-    lecturerID: {
+    lecturerId: {
         type: Schema.Types.ObjectId,
         required: true,
         ref: 'User'
