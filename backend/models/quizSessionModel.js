@@ -1,22 +1,23 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const SessionSchema = new mongoose.Schema({
-  activity: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Activity', 
-    required: true 
+const quizSessionSchema = new Schema({
+  quizId: { type: Schema.Types.ObjectId, required: true, ref: 'Quiz' },
+  sessionCode: { type: String, required: true, unique: true, trim: true },
+  status: {
+    type: String,
+    required: true,
+    enum: ['pending', 'active', 'finished'],
+    default: 'pending'
   },
-  status: { 
-    type: String, 
-    enum: ['pending', 'live', 'stopped'], 
-    default: 'pending' },
-  joinCode: { 
-    type: String, 
-    unique: true, 
-    index: true },
+  currentQuestionIndex: { type: Number, default: 0 },
+  participants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+  responses: [{ type: Schema.Types.ObjectId, ref: 'Response' }],
+  startedAt: { type: Date },
+  endedAt: { type: Date }
+}, { 
+  timestamps: true,
+  collection: 'sessions' 
+});
 
-  startedAt: Date,
-  endedAt: Date
-  
-}, { timestamps: true });
-module.exports = mongoose.model('Session', SessionSchema);
+module.exports = mongoose.model('QuizSession', quizSessionSchema);

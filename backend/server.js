@@ -6,8 +6,9 @@ const { Server } = require('socket.io');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
-const activityRoutes = require('./routes/activities');
-const sessionRoutes = require('./routes/sessions');
+const quizRoutes = require('./routes/quizRoutes');
+const quizSessionRoutes = require('./routes/quizSessionRoutes');
+const courseRoutes = require('./routes/courseRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -27,13 +28,15 @@ app.set('io', io);
 io.on('connection', (socket) => {
   socket.on('joinSessionRoom', (sessionId) => socket.join(`session:${sessionId}`));
   socket.on('leaveSessionRoom', (sessionId) => socket.leave(`session:${sessionId}`));
+  socket.on('disconnect', () => {console.log(`User disconnected: ${socket.id}`);});
 });
 
 
 // routes
 app.use('/api/auth', authRoutes);
-app.use('/api/activities', activityRoutes);
-app.use('/api/sessions', sessionRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/quizzes', quizRoutes); // Using /api/quizzes for consistency
+app.use('/api/sessions', quizSessionRoutes); // Using /api/sessions for consistency
 
 // db + start
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })

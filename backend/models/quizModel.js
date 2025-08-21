@@ -1,45 +1,34 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-// all items to schema's to be used within a quiz ; all static contents of a quiz
-const QuestionSchema = new mongoose.Schema({
-  type: { 
-    type: String, 
-    enum: ['mcq', 'truefalse', 'short'], 
-    default: 'mcq' 
-  },
-  text: { 
-    type: String, 
-    required: true 
-  },
-  options: [String],
+// A flexible sub-schema for an individual answer
+const answerSchema = new Schema({
+  answerText: { type: String, required: true, trim: true },
+  isCorrect: { type: Boolean, required: true, default: false }
+}, { _id: false });
 
-  correctIndex: { 
-    type: Number 
+// A feature-rich sub-schema for a question
+const questionSchema = new Schema({
+  questionType: {
+    type: String,
+    enum: ['mcq', 'truefalse', 'short_answer'],
+    default: 'mcq'
   },
-  points: { 
-    type: Number, 
-    default: 1 // test here, init value incorect
-  }
+  questionText: { type: String, required: true, trim: true },
+  points: { type: Number, default: 1, min: 0 },
+  answers: [answerSchema]
+}, { _id: false });
+
+// The main schema for the Quiz
+const quizSchema = new Schema({
+  title: { type: String, required: true, trim: true },
+  courseId: { type: Schema.Types.ObjectId, required: true, ref: 'Course' },
+  createdBy: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+  questions: [questionSchema],
+  isDraft: { type: Boolean, default: true }
+}, { 
+  timestamps: true,
+  collection: 'quizzes'
 });
 
-// we should also create a 'QuizTypeSchema' here to be used in the acitivty, 
-// which will allow the person to select the type of question.
-const QuizTypeSchema = new mongoose.Schema({
-
-})
-
-const ActivitySchema = new mongoose.Schema({
-  title: { 
-    type: String, 
-    required: true 
-  },
-  createdBy: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', required: true 
-  },
-  questions: [QuestionSchema],
-
-  isDraft: { type: Boolean, default: true }
-}, { timestamps: true });
-
-module.exports = mongoose.model('Activity', ActivitySchema);  // <-- MUST be a model
+module.exports = mongoose.model('Quiz', quizSchema);

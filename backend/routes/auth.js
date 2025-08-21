@@ -1,4 +1,4 @@
-
+// routes/auth.js
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -9,35 +9,34 @@ const router = express.Router();
 // REGISTER
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    // CORRECTED: Added 'role' to the destructured body.
+    const { name, email, role, password } = req.body;
+    
+    if (!role) {
+      return res.status(400).json({ msg: "A role ('student' or 'lecturer') is required." });
+    }
 
-    // check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ msg: "User already exists" });
     }
 
-    // hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // create new user
     const newUser = new User({
       name,
       email,
-      passwordHash : hashedPassword,
+      role, // CORRECTED: Added role to the new user object.
+      passwordHash: hashedPassword,
     });
 
     await newUser.save();
+    
+    // It's better to just send a success message on register.
+    // The user can then proceed to the login page.
+    res.status(201).json({ msg: "User registered successfully" });
 
-    // return token
-    const token = jwt.sign(
-      { id: newUser._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    res.json({ token, user: { id: newUser._id, name: newUser.name, email: newUser.email } });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
@@ -49,26 +48,32 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // check user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ msg: "Invalid credentials" });
     }
 
-    // compare passwords
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       return res.status(400).json({ msg: "Invalid credentials" });
     }
 
-    // return token
+    // CORRECTED: The JWT payload now includes all the necessary user info
+    // that your 'auth' middleware expects.
+    const payload = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    };
+
     const token = jwt.sign(
-      { id: user._id },
+      payload,
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "3h" } // Increased expiry time
     );
 
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
+    res.json({ token, user: payload });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
