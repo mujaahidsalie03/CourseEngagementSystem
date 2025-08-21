@@ -1,20 +1,23 @@
+// routes/quizSessionRoutes.js
 const express = require('express');
 const router = express.Router();
-const { 
-  startSession, 
-  stopSession, 
-  joinSession, 
-  submitAnswer, 
-  getSessionResults 
-} = require('../controllers/quizSessionController');
 const auth = require('../middleware/auth');
-const { requireRole } = require('../middleware/roles');
+const requireRole = require('../middleware/roles');
+const sessionCtrl = require('../controllers/quizSessionController');
 
-router.post('/start', auth(), requireRole('lecturer'), startSession);
-router.post('/:sessionId/stop', auth(), requireRole('lecturer'), stopSession);
-router.get('/:sessionId/results', auth(), requireRole('lecturer'), getSessionResults);
-router.post('/join', auth(), requireRole('student'), joinSession);
-router.post('/:sessionId/answer', auth(), requireRole('student'), submitAnswer);
-router.get('/ping', (req, res) => res.json({ status: 'ok', message: 'Quiz Session service is running' }));
+// start a session (lecturer)
+router.post('/start', auth(), requireRole('lecturer'), sessionCtrl.start);
+
+// join a session (student)
+router.post('/join', auth(), requireRole('student'), sessionCtrl.join);
+
+// answer a question (student)
+router.post('/:id/answer', auth(), requireRole('student'), sessionCtrl.answer);
+
+// stop a session (lecturer)
+router.post('/:id/stop', auth(), requireRole('lecturer'), sessionCtrl.stop);
+
+// optional scoreboard endpoint
+router.get('/:id/scoreboard', auth(), sessionCtrl.scoreboard);
 
 module.exports = router;

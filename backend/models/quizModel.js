@@ -1,34 +1,24 @@
+// models/quizModel.js
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-// A flexible sub-schema for an individual answer
-const answerSchema = new Schema({
-  answerText: { type: String, required: true, trim: true },
-  isCorrect: { type: Boolean, required: true, default: false }
+const answerSchema = new mongoose.Schema({
+  answerText: { type: String, required: true },
+  isCorrect: { type: Boolean, default: false },
 }, { _id: false });
 
-// A feature-rich sub-schema for a question
-const questionSchema = new Schema({
-  questionType: {
-    type: String,
-    enum: ['mcq', 'truefalse', 'short_answer'],
-    default: 'mcq'
-  },
-  questionText: { type: String, required: true, trim: true },
-  points: { type: Number, default: 1, min: 0 },
-  answers: [answerSchema]
+const questionSchema = new mongoose.Schema({
+  questionText: { type: String, required: true },
+  points: { type: Number, default: 1 }, // allowed, defaults to 1
+  answers: { type: [answerSchema], validate: v => Array.isArray(v) && v.length >= 2 },
 }, { _id: false });
 
-// The main schema for the Quiz
-const quizSchema = new Schema({
-  title: { type: String, required: true, trim: true },
-  courseId: { type: Schema.Types.ObjectId, required: true, ref: 'Course' },
-  createdBy: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
-  questions: [questionSchema],
-  isDraft: { type: Boolean, default: true }
-}, { 
-  timestamps: true,
-  collection: 'quizzes'
-});
+const quizSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
+  questions: { type: [questionSchema], default: [] },
+  isDraft: { type: Boolean, default: false },
+  // createdBy removed from required checks (can be null)
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false }
+}, { timestamps: true });
 
 module.exports = mongoose.model('Quiz', quizSchema);

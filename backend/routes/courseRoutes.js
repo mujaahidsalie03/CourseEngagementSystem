@@ -1,13 +1,17 @@
+// routes/courseRoutes.js
 const express = require('express');
 const router = express.Router();
-const { createCourse, getUserCourses } = require('../controllers/courseController');
+const auth = require('../middleware/auth');
+const requireRole = require('../middleware/roles');
+const courseController = require('../controllers/courseController');
 
-// POST /api/courses
-// Creates a new course.
-router.post('/', createCourse);
+// list my courses (lecturer = teaching, student = enrolled)
+router.get('/', auth(), courseController.listMineOrEnrolled);
 
-// GET /api/courses/user/:userId
-// Gets all courses for a specific user by their ID.
-router.get('/user/:userId', getUserCourses);
+// create a course (lecturer)
+router.post('/', auth(), requireRole('lecturer'), courseController.create);
+
+// get by id
+router.get('/:id', auth(), courseController.byId);
 
 module.exports = router;

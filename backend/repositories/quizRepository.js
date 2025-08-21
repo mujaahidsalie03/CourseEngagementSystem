@@ -1,23 +1,14 @@
 // repositories/quizRepository.js
 const Quiz = require('../models/quizModel');
 
-const create = (quizData) => {
-  const quiz = new Quiz(quizData);
-  return quiz.save();
-};
+exports.create = (data) => Quiz.create(data);
 
-const findByCourseId = (courseId) => {
-  return Quiz.find({ courseId: courseId }).sort({ updatedAt: -1 });
-};
+// 🔧 used by controllers – was missing before
+exports.findById = (id) => Quiz.findById(id).lean();
 
-// NEW: This function was added because it's required by the quizSessionService.
-// It finds a quiz only if it also matches the lecturer's ID.
-const findByIdAndLecturer = (quizId, lecturerId) => {
-    return Quiz.findOne({ _id: quizId, createdBy: lecturerId });
-};
+exports.findByCourse = (courseId) => Quiz.find({ courseId }).lean();
 
-module.exports = { 
-  create, 
-  findByCourseId, 
-  findByIdAndLecturer // Export the new function
-};
+exports.updateById = (id, patch) =>
+  Quiz.findByIdAndUpdate(id, patch, { new: true });
+
+exports.deleteById = (id) => Quiz.findByIdAndDelete(id);

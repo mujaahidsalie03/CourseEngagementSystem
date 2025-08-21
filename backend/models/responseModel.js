@@ -1,20 +1,16 @@
+// models/responseModel.js
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-const responseSchema = new Schema({
-  quizSessionId: { type: Schema.Types.ObjectId, required: true, ref: 'QuizSession' },
-  studentId: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+const responseSchema = new mongoose.Schema({
+  session: { type: mongoose.Schema.Types.ObjectId, ref: 'QuizSession', required: true, index: true },
+  student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   questionIndex: { type: Number, required: true },
-  // Storing the actual answer submitted is more flexible
-  answer: { type: Schema.Types.Mixed, required: true }, 
+  selectedAnswerIndex: { type: Number, required: true },
   isCorrect: { type: Boolean, required: true },
-  answeredAt: { type: Date, default: Date.now }
-}, { 
-  timestamps: true,
-  collection: 'responses'
-});
+  pointsEarned: { type: Number, default: 0 },
+  answeredAt: { type: Date, default: Date.now },
+}, { timestamps: true });
 
-// This unique index is a great idea to prevent duplicate answers
-responseSchema.index({ quizSessionId: 1, questionIndex: 1, studentId: 1 }, { unique: true });
+responseSchema.index({ session: 1, student: 1, questionIndex: 1 }, { unique: true });
 
 module.exports = mongoose.model('Response', responseSchema);

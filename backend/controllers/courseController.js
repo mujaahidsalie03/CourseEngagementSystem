@@ -1,36 +1,42 @@
-const courseRepository= require('../repositories/courseRepository');
+// controllers/courseController.js
+const Course = require('../models/courseModel');
 
-const createCourse = async (req, res) => {
-    try{
-         // The controller's job is to get the data from the request
-        const { courseName, courseCode, lecturerId } = req.body;
-        if(!lecturerId){
-            return res.status(400).json({ message: 'Lecturer ID is required.' });
-        }
-
-        //Pass it to the repository to handle the database logic.
-        const newCourse = await courseRepository.create({ courseName, courseCode, lecturerId });
-        res.status(201).json(newCourse);
-    } catch(error) {
-        console.error(error.message);
-        res.status(500).json({ message: 'Server error while creating course.' });
+exports.listMineOrEnrolled = async (req, res) => {
+  try {
+    if (req.user.role === 'lecturer') {
+      const items = await Course.find({ lecturerId: req.user._id }).lean();
+      return res.json(items);
     }
+    // students
+    const items = await Course.find({ students: req.user._id }).lean();
+    return res.json(items);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 
-const getUserCourses = async(req, res) => {
-    try{
-        const userId = req.params.userId;
-
-        // The controller calls the repository to fetch the data.
-        const courses = await courseRepository.findByUserId(userId);
-        res.json(courses);
-    } catch(error) {
-        console.error(error.message);
-        res.status(500).json({ message: 'Server error while fetching courses.' });
+exports.create = async (req, res) => {
+  try {
+    const { courseName, courseCode } = req.body;
+    if (!courseName || !courseCode) {
+      return res.status(400).json({ message: 'courseName and courseCode required' });
     }
+    const c = await Course.create({ courseName, courseCode, lecturerId: req.user._id });
+    res.status(201).json(c);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 
-module.exports = {
-  createCourse,
-  getUserCourses,
+exports.byId = async (req, res) => {
+  try {
+    const c = await Course.findById(req.params.id).lean();
+    if (!c) return res.status(404).json({ message: 'Not found' });
+    res.json(c);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
