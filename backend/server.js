@@ -6,85 +6,94 @@ const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
 
+// Import routes
 const authRoutes = require('./routes/auth');
 const courseRoutes = require('./routes/courseRoutes');
 const quizRoutes = require('./routes/quizRoutes');
 const sessionRoutes = require('./routes/quizSessionRoutes');
 
-const Response = require('./models/responseModel');
+// Import services
+const SocketService = require('./services/socketService');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: process.env.CORS_ORIGIN || '*' }
+  cors: {
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+  }
 });
 
-// middleware
-app.use(cors());
-app.use(express.json());
+// Middleware
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-// attach io so routes and controllers can emit
+// Attach io to app so controllers can access it
 app.set('io', io);
 
-// --- sockets ---
-io.on('connection', (socket) => {
-  // join a session room
-  socket.on('join_session', ({ sessionId }) => {
-    if (sessionId) socket.join(`session:${sessionId}`);
-  });
-  socket.on('joinSessionRoom', (sessionId) => {
-    if (sessionId) socket.join(`session:${sessionId}`);
-  });
+// Initialize Socket.IO service
+const socketService = new SocketService(io);
 
-  // lecturer controls
-  socket.on('next_question', ({ sessionId, index }) => {
-    io.to(`session:${sessionId}`).emit('next_question', { index });
-    io.to(`session:${sessionId}`).emit('phase', { value: 'question', index });
-  });
-
-  socket.on('phase', ({ sessionId, value, index }) => {
-    io.to(`session:${sessionId}`).emit('phase', { value, index });
-  });
-
-  socket.on('end_quiz', ({ sessionId }) => {
-    io.to(`session:${sessionId}`).emit('end_quiz');
-  });
-
-  // compute and broadcast scoreboard (top N)
-  socket.on('show_scoreboard', async ({ sessionId, limit = 3 }) => {
-    try {
-      const sid = new mongoose.Types.ObjectId(sessionId);
-      const top = await Response.aggregate([
-        { $match: { session: sid } },
-        { $group: { _id: '$student', total: { $sum: '$pointsEarned' } } },
-        { $sort: { total: -1 } },
-        { $limit: limit },
-        { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'u' } },
-        { $unwind: '$u' },
-        { $project: { _id: 0, name: '$u.name', total: 1 } },
-      ]);
-      io.to(`session:${sessionId}`).emit('scoreboard', { top });
-      io.to(`session:${sessionId}`).emit('phase', { value: 'scoreboard' });
-    } catch (e) {
-      console.error('scoreboard error', e);
-    }
-  });
-});
-
-// routes
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/sessions', sessionRoutes);
 
-// db + start
-const PORT = process.env.PORT || 5000;
-mongoose.connect(process.env.MONGO_URI, {})
-  .then(() => {
-    console.log('MongoDB connected');
-    server.listen(PORT, () => console.log(`Server + WS on port ${PORT}`));
-  })
-  .catch(err => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// 404 handler
+app.use('/{*any}', (req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// Database connection and server startup
+const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/course-engagement-system';
+
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => {
+  console.log('✅ MongoDB connected successfully');
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🔗 Socket.IO ready for connections`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+})
+.catch(err => {
+  console.error('❌ MongoDB connection error:', err);
+  process.exit(1);
+});
+
+// shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  server.close(() => {
+    mongoose.connection.close();
+    process.exit(0);
+  });
+});

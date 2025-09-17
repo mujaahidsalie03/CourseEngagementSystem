@@ -1,23 +1,27 @@
-// routes/quizSessionRoutes.js
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const requireRole = require('../middleware/roles');
-const sessionCtrl = require('../controllers/quizSessionController');
+const quizSessionController = require('../controllers/quizSessionController');
 
-// start a session (lecturer)
-router.post('/start', auth(), requireRole('lecturer'), sessionCtrl.start);
+// CREATE a new quiz session (Lecturer only)
+router.post('/', auth, quizSessionController.createSession);
 
-// join a session (student)
-router.post('/join', auth(), requireRole('student'), sessionCtrl.join);
+// JOIN a session using session code (Student/Lecturer)
+router.post('/join', auth, quizSessionController.joinSession);
 
-// answer a question (student)
-router.post('/:id/answer', auth(), requireRole('student'), sessionCtrl.answer);
+// START a session (Lecturer only)
+router.post('/:sessionId/start', auth, quizSessionController.startSession);
 
-// stop a session (lecturer)
-router.post('/:id/stop', auth(), requireRole('lecturer'), sessionCtrl.stop);
+// SUBMIT an answer to current question (Student only)
+router.post('/:sessionId/answer', auth, quizSessionController.submitAnswer);
 
-// optional scoreboard endpoint
-router.get('/:id/scoreboard', auth(), sessionCtrl.scoreboard);
+// GET session results/analytics (Lecturer/Student)
+router.get('/:sessionId/results', auth, quizSessionController.getSessionResults);
+
+// END a session (Lecturer only)
+router.post('/:sessionId/end', auth, quizSessionController.endSession);
+
+// GET session details (generic, last!)
+router.get('/:sessionId', auth, quizSessionController.getSession);
 
 module.exports = router;
