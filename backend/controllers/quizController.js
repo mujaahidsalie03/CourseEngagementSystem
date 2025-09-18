@@ -34,6 +34,14 @@ const validateQuestion = (question) => {
       // there is no 'correct' answer here, we only need the prompt.
       break ; 
 
+    case 'fill_in_the_blank':
+      // somendra logic here
+      break ; 
+
+    case 'poll':
+       // somendra logic here
+      break ; 
+
     default:
       errors.push('Invalid question type.');
   }

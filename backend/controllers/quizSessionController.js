@@ -332,6 +332,14 @@ exports.submitAnswer = async (req, res) => {
           isCorrect = true;
         }
         break;
+
+      case 'fill_in_the_blank':
+        // somendra logic here
+        break;
+
+      case 'poll':
+        // somendra logic here
+        break;
     }
 
     // Save response
