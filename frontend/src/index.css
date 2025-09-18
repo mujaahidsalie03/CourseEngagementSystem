@@ -1,5 +1,0 @@
-/* tiny, neutral styles */
-* { box-sizing: border-box; }
-body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
-a { color: #4f46e5; text-decoration: none; }
-a:hover { text-decoration: underline; }

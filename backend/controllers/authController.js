@@ -1,27 +1,41 @@
 // controllers/authController.js
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 
 exports.register = async (req, res) => {
   try {
     const { name, email, password, role = 'student' } = req.body;
+    
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'name, email, password required' });
     }
-    const exists = await User.findOne({ email }).lean();
-    if (exists) return res.status(400).json({ message: 'Email already in use' });
 
-    const passwordHash = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, passwordHash, role });
-    const token = jwt.sign(
-      { _id: String(user._id), role: user.role, name: user.name, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    res.status(201).json({ token, user: { _id: user._id, name: user.name, email, role } });
-  } catch (e) {
-    console.error(e);
+    // Check if user already exists
+    const exists = await User.findOne({ email }).lean();
+    if (exists) {
+      return res.status(400).json({ message: 'Email already in use' });
+    }
+
+    // Create user without password hashing - i've kept the naming so it doesnt change in the db side.
+    const user = await User.create({ 
+      name, 
+      email, 
+      passwordHash: password, // Store plain password
+      role 
+    });
+
+    // Return user data without token
+    res.status(201).json({ 
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role 
+      },
+      message: 'User created successfully (dev mode - no token)'
+    });
+
+  } catch (error) {
+    console.error('Register error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -29,19 +43,35 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-    const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
+    
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password required' });
+    }
 
-    const token = jwt.sign(
-      { _id: String(user._id), role: user.role, name: user.name, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    res.json({ token, user: { _id: user._id, name: user.name, email: user.email, role: user.role } });
-  } catch (e) {
-    console.error(e);
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Simple password check, without any JWT checking.
+    if (user.passwordHash !== password) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Return user data without token
+    res.json({ 
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role 
+      },
+      message: 'Login successful'
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
