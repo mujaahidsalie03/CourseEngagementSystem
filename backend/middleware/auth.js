@@ -1,23 +1,21 @@
-const jwt = require('jsonwebtoken');
+// middleware/auth.js
+const auth = (req, res, next) => {
+  // Ensure req.body exists (it should after express.json() middleware)
+  if (!req.body) {
+    req.body = {};
+  }
 
-// export a FUNCTION that returns an Express middleware
-module.exports = function auth(required = true) {
-  return (req, res, next) => {
-    const hdr = req.headers.authorization || '';
-    const token = hdr.startsWith('Bearer ') ? hdr.slice(7) : null;
+  // Extract userId and role from request body for development
+  const { userId, role } = req.body;
 
-    if (!token) {
-      if (required) return res.status(401).json({ error: 'No token' });
-      req.user = null;
-      return next();
-    }
-
-    try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = payload; // {_id, email, name, role}
-      next();
-    } catch {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-  };
+  // Create a mock user object similar to what JWT would provide
+  if (userId) {
+    req.user = {
+      _id: userId,
+      role: role || 'student'
+    };
+  } 
+  next();
 };
+
+module.exports = auth;
