@@ -1,0 +1,24 @@
+/* :root defines variables for your whole project */
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Basic reset for margins and setting a min-width */
+body {
+  margin: 0;
+  /* We removed the display:flex and place-items:center rules */
+  /* The background color from CourseListPage.css is now the global default */
+  background-color: #f4f7f6;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
