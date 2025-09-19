@@ -1,0 +1,95 @@
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.waiting-room {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  text-align: center;
+}
+
+.session-header {
+  position: absolute;
+  top: 20px;
+  left: 40px;
+  text-align: left;
+  color: #555;
+}
+
+.session-header p {
+  margin: 0;
+}
+
+.session-header h3 {
+  margin: 5px 0 0 0;
+  color: #2c3e50;
+}
+
+.status-container h1 {
+  font-size: 3.5em;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.status-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  font-size: 1.2em;
+  color: #7f8c8d;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 2s linear infinite;
+}
+
+.participants-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 400px;
+  margin-top: 40px;
+  padding: 20px;
+}
+
+.participants-card h2 {
+  margin-top: 0;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.participants-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 15px;
+  text-align: left;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.participants-list li {
+  padding: 8px 5px;
+  border-bottom: 1px solid #f9f9f9;
+}
+
+.leave-button {
+  margin-top: 30px;
+  background: none;
+  border: none;
+  color: #95a5a6;
+  text-decoration: underline;
+  cursor: pointer;
+}
