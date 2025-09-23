@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './WaitingRoomView.css'; // Make sure the CSS file is also renamed and path is correct
 
 // The component now receives sessionInfo as a prop
-const WaitingRoomView = ({ sessionInfo }) => {
+const WaitingRoomView = ({ sessionInfo, participants }) => {
   const navigate = useNavigate();
 
   return (
@@ -20,9 +20,11 @@ const WaitingRoomView = ({ sessionInfo }) => {
         </div>
       </div>
       <div className="participants-card">
-        <h2>Participants ({sessionInfo.participants.length})</h2>
+        {/* Use the length from the live participants prop */}
+        <h2>Participants ({participants.length})</h2>
         <ul className="participants-list">
-          {sessionInfo.participants.map(p => <li key={p.id}>{p.name}</li>)}
+          {/* Map over the live participants prop */}
+          {participants.map(p => <li key={p.user._id}>{p.user.name}</li>)}
         </ul>
       </div>
       <button onClick={() => navigate(-1)} className="leave-button">Leave Session</button>

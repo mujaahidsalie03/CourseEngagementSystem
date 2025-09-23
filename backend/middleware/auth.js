@@ -6,7 +6,7 @@ const auth = (req, res, next) => {
   }
 
   // Extract userId and role from request body for development
-  const { userId, role } = req.body;
+  const { userId, role } = { ...req.body, ...req.query };
 
   // Create a mock user object similar to what JWT would provide
   if (userId) {

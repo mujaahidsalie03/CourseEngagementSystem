@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { courseService } from '../services/courseService.js';
+import { quizService } from '../services/quizService.js';
 import './CourseDetailPage.css';
+import { sessionService } from '../services/sessionService.js';
 
 const CourseDetailPage = () => {
     // useParams gets the dynamic part of the URL (the courseId)
@@ -13,30 +15,36 @@ const CourseDetailPage = () => {
   const [pastQuizzes, setPastQuizzes] = useState([]);
 
   // This would eventually be the logged-in user's ID
-  const studentId = 'mock-student-123';
+  //const studentId = 'mock-student-123';
 
   useEffect(() => {
     // Fetch the course details
-    courseService.getCourseById(courseId).then(data => {
-      setCourse(data);
-    });
+    courseService.getCourseById(courseId).then(setCourse);
 
     //Get past quizzes
-    courseService.getPastQuizzesForStudent(courseId, studentId)
-    .then(data => {
+    // 2. Call the new quizService to fetch real quiz data for this course
+    quizService.getQuizzesByCourse(courseId)
+      .then(data => {
         setPastQuizzes(data);
       });
-  }, [courseId]); // Re-run if the courseId changes
+  }, [courseId]);
 
-  const handleJoinSession = (e) => {
+  const handleJoinSession = async (e) => {
     e.preventDefault();
-    if (sessionCode.trim()) {
-      // For now, just show an alert. Later this will call the API.
-      // The backend has a POST /api/sessions/join endpoint for this.
-      // In a real app, you would first call the API to validate the code,
-      // and on success, the API would return a sessionId.
-      const mockSessionId = 'ABCDE12345'; // Using a mock ID for now
-      navigate(`/session/${mockSessionId}`);
+    if (!sessionCode.trim()) {
+      alert("Please enter a session code.");
+      return;
+    }
+    try {
+      // 1. Call the service, which makes the real API request
+      const response = await sessionService.joinSession(sessionCode);
+      
+      // 2. On success, navigate using the real sessionId from the backend's response
+      navigate(`/session/${response.sessionId}`);
+
+    } catch (error) {
+      // 3. If the backend returns an error (e.g., code not found), show it
+      alert(error.message);
     }
   };
 
@@ -72,15 +80,15 @@ const CourseDetailPage = () => {
         {pastQuizzes.length > 0 ? (
           <ul className="past-quizzes-list">
             {pastQuizzes.map(quiz => (
-              <li key={quiz.sessionId} className="past-quiz-item">
+              <li key={quiz._id} className="past-quiz-item">
                 <span className="quiz-title">{quiz.title}</span>
-                <span className="quiz-date">{quiz.date}</span>
-                <span className="quiz-score">Score: {quiz.score}</span>
+                <span className="quiz-date">{new Date(quiz.createdAt).toLocaleDateString()}</span>
+                <span className="quiz-score">{quiz.questionCount} Questions</span>
               </li>
             ))}
           </ul>
         ) : (
-          <p>You have not participated in any quizzes for this course yet.</p>
+          <p>No Quizzes Found for This Course</p>
         )}
       </div>
     </div>

@@ -10,7 +10,7 @@ const CourseCard = ({ course }) => {
         <div className="course-card">
             <h3 className="course-card-title">{course.courseName}</h3>
             <p className="course-card-code">{course.courseCode}</p>
-            <p className="course-card-lecturer">Lecturer: {course.lecturerId.name}</p>
+            <p className="course-card-lecturer">Lecturer: {course.lecturerId?.name || 'N/A'}</p>
         </div>
     </Link>
   );

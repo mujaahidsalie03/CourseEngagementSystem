@@ -8,7 +8,7 @@ exports.listMineOrEnrolled = async (req, res) => {
       return res.json(items);
     }
     // students
-    const items = await Course.find({ students: req.user._id }).lean();
+    const items = await Course.find({ students: req.user._id }).populate('lecturerId', 'name').lean();
     return res.json(items);
   } catch (e) {
     console.error(e);

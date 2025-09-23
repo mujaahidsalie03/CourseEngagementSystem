@@ -1,3 +1,4 @@
+import { http } from '../api/http.js';
 // Mock data for our waiting room
 const mockSessionData = {
   courseName: 'Software Engineering',
@@ -22,11 +23,11 @@ const mockQuestion = {
 
 export const sessionService = {
   // This simulates fetching the initial state of the session after joining
+  joinSession: (sessionCode) => {
+    return http.post('/sessions/join', { sessionCode });
+  },
   getSessionInfo: (sessionId) => {
-    console.log(`Fetching info for session ${sessionId}`);
-    // We add the current user to the list for this simulation
-    const fullParticipants = [...mockSessionData.participants, { id: '5', name: 'You' }];
-    return Promise.resolve({ ...mockSessionData, participants: fullParticipants });
+    return http.get(`/sessions/${sessionId}`); //Fetch real initial session data
   },
 
   getCurrentQuestion: (sessionId) => {

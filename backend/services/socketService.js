@@ -15,7 +15,7 @@ class SocketService {
       console.log(`Socket connected: ${socket.id}`);
 
       // Join session room
-      socket.on('join_session', this.handleJoinSession.bind(this, socket));
+      socket.on('join_session', this.handleJoinSessionRoom.bind(this, socket));
       socket.on('joinSessionRoom', this.handleJoinSessionRoom.bind(this, socket));
 
       // Lecturer controls
