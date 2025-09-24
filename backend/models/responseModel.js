@@ -326,4 +326,51 @@ responseSchema.statics.getWordCloudData = function(sessionId, questionIndex) {
   ]);
 };
 
+// This is our new function
+responseSchema.statics.getStudentCourseStats = async function(studentId, courseId) {
+  const mongoose = require('mongoose');
+
+  // 1. Find all quizzes that belong to the course
+  const quizzesInCourse = await mongoose.model('Quiz').find({ courseId }).select('_id').lean();
+  const quizIds = quizzesInCourse.map(q => q._id);
+
+  // 2. Find all sessions for those quizzes
+  const sessionsForQuizzes = await mongoose.model('QuizSession').find({ quiz: { $in: quizIds } }).select('_id').lean();
+  const sessionIds = sessionsForQuizzes.map(s => s._id);
+
+  // 3. Find all of the student's responses ONLY for those sessions
+  const responses = await this.find({ 
+    student: studentId, 
+    session: { $in: sessionIds } 
+  }).lean();
+
+  if (responses.length === 0) {
+    return null; // No data to analyze
+  }
+
+  // 4. Calculate the summary statistics
+  const totalAnswers = responses.length;
+  const correctAnswers = responses.filter(r => r.isCorrect).length;
+  const totalPoints = responses.reduce((sum, r) => sum + r.pointsEarned, 0);
+  const quizzesTakenCount = new Set(responses.map(r => r.session.toString())).size;
+  const totalPossiblePoints = responses.reduce((sum, r) => sum + r.maxPointsPossible, 0);
+
+  const summaryStats = {
+    participationRate: (quizzesTakenCount / sessionsForQuizzes.length) * 100,
+    averageScore: totalPossiblePoints > 0 ? (totalPoints / totalPossiblePoints) * 100 : 0,
+    quizzesTaken: quizzesTakenCount,
+    correctAnswers: correctAnswers,
+    totalAnswers: totalAnswers,
+  };
+
+  // 5. Format data for the chart (simplified for now)
+  // A full implementation would group by quiz title and average the score.
+  const performanceOverTime = responses.map((r, index) => ({
+    name: `Quiz ${index + 1}`,
+    yourScore: (r.pointsEarned / r.maxPointsPossible) * 100,
+  }));
+
+  return { summaryStats, performanceOverTime };
+};
+
 module.exports = mongoose.model('Response', responseSchema);

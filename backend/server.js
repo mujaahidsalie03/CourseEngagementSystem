@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const courseRoutes = require('./routes/courseRoutes');
 const quizRoutes = require('./routes/quizRoutes');
 const sessionRoutes = require('./routes/quizSessionRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 
 // Import services
 const SocketService = require('./services/socketService');
@@ -44,6 +45,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

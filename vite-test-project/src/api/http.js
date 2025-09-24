@@ -3,7 +3,7 @@ const BASE_URL = 'http://localhost:5000/api';
 
 // TODO: Replace this with a real student ID from your MongoDB database.
 // You can find one by looking in the 'users' collection.
-const MOCK_USER_ID = '68a5962a55e44d61986c5dce';
+const MOCK_USER_ID = '68d176b3e0785bd70e0c35e1';
 
 // This helper function will handle all our API requests
 const apiFetch = async (endpoint, method = 'GET', body = null) => {

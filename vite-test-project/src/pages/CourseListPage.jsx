@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// Step 1: Import the new service
+import { Link } from 'react-router-dom';
+// Import the new service
 import { courseService } from '../services/courseService.js'; 
 import CourseCard from '../components/CourseCard';
 import './CourseListPage.css';
@@ -24,6 +25,7 @@ const CourseListPage = () => {
       <header className="page-header">
         <h2>Welcome, Student!</h2>
         <h1>Your Courses</h1>
+        <Link to="/analytics" className="analytics-link">View My Analytics</Link>
       </header>
       <div className="course-grid">
         {courses.map(course => (
