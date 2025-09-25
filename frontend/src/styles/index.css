@@ -1,0 +1,1308 @@
+:root { --bg:#f7f9f8; --card:#fff; --text:#0f172a; --muted:#5b677a; --ring:#dde3ea; }
+
+* { box-sizing:border-box; }
+body { margin:0; font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--text); }
+a { color:inherit; text-decoration:none; }
+
+.container { max-width:1150px; margin:0 auto; padding:24px; }
+.grid { display:grid; gap:18px; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); }
+
+.card { background:var(--card); border:1px solid var(--ring); border-radius:14px; padding:18px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.row { display:flex; gap:12px; align-items:center; }
+h1,h2,h3{ margin:0 0 12px; }
+
+.btn { padding:10px 14px; border:1px solid var(--ring); border-radius:10px; background:#111827; color:#fff; cursor:pointer; }
+.btn.secondary{ background:#fff; color:#111827; }
+.btn.accent { background:#0b1020; color:#fff; border:1px solid rgba(0,0,0,.85); box-shadow:0 8px 18px rgba(0,0,0,.18); }
+.btn.accent:hover { transform: translateY(-1px); }
+
+.input { width:100%; padding:10px 12px; border:1px solid var(--ring); border-radius:10px; }
+
+.small { color:var(--muted); font-size:.9rem; }
+.badge { font-size:.8rem; padding:3px 8px; border-radius:999px; background:#eef2ff; border:1px solid #e5e7eb; }
+.hr { height:1px; background:var(--ring); border:0; margin:16px 0; }
+
+.table { width:100%; border-collapse:collapse; }
+.table td, .table th { padding:10px; border-bottom:1px solid var(--ring); text-align:left; }
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative;
+  background: radial-gradient(1200px 400px at 10% -10%, #ffffff 0%, rgba(255,255,255,0) 60%),
+              linear-gradient(135deg, #eef2ff, #e0f2fe 40%, #ecfeff);
+  border: 1px solid var(--ring);
+  border-radius: 18px;
+  padding: 28px 22px 20px;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.hero::after {
+  content: "";
+  position: absolute; inset: -2px;
+  background: radial-gradient(600px 160px at 70% 0%, rgba(167,139,250,.25), rgba(255,255,255,0) 70%);
+  pointer-events: none;
+}
+.hero-pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: .8rem;
+  color: #4b5563;
+}
+.hero-title {
+  margin: 8px 0 4px;
+  font-size: clamp(26px, 4vw, 38px);
+  line-height: 1.1;
+  letter-spacing: .2px;
+}
+.hero-sub { margin: 0 0 14px; color: var(--muted); }
+.hero-controls { max-width: 460px; }
+
+/* ---------- Vibrant Grid ---------- */
+.grid-vibrant { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+
+/* ---------- Gradient Card ---------- */
+.gcard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: 16px;
+  padding: 16px;
+  border: 0;
+  color: #0b1020;
+  text-align: left;
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+  box-shadow: 0 6px 18px rgba(17,24,39,.08), inset 0 0 0 1px rgba(255,255,255,.35);
+  background-size: 150% 150%;
+  animation: gradientShift 16s ease infinite;
+  cursor: pointer;
+}
+.gcard:focus-visible { outline: 3px solid rgba(59,130,246,.7); outline-offset: 2px; }
+.gcard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 26px rgba(17,24,39,.16), inset 0 0 0 1px rgba(255,255,255,.55);
+  filter: saturate(1.05);
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Card content */
+.gcard-top { display: flex; justify-content: space-between; align-items: center; }
+.g-emoji { font-size: 26px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.12)); }
+.g-code {
+  padding: 6px 10px; border-radius: 999px;
+  background: rgba(255,255,255,.65); border: 1px solid rgba(255,255,255,.8);
+  font-weight: 600; font-size: .85rem;
+}
+.g-title { font-weight: 800; font-size: 1.15rem; line-height: 1.2; text-shadow: 0 1px 0 rgba(255,255,255,.55); }
+.g-sub { color: #122035; opacity: .8; }
+.g-bottom { margin-top: 8px; display: flex; justify-content: space-between; align-items: center; }
+.g-chip {
+  background: rgba(255,255,255,.9);
+  border: 1px solid rgba(17,24,39,.08);
+  padding: 6px 10px; border-radius: 10px; font-weight: 600;
+}
+.g-arrow { opacity: .9; }
+
+/* --- Top bar --- */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.65));
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--ring);
+}
+.topbar-inner { display: flex; align-items: center; justify-content: space-between; padding-top: 16px; padding-bottom: 8px; }
+
+/* Gradient brand title */
+.brand {
+  margin: 0; font-size: clamp(22px, 3.2vw, 32px); font-weight: 800;
+  background: linear-gradient(90deg, #0f172a 0%, #334155 50%, #0f172a 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: .3px;
+}
+
+/* Nav pills — unify links and button (Logout) */
+.topbar .nav {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Apply the same pill style to anchors and buttons */
+.topbar .nav a,
+.topbar .nav button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;              /* same height for all pills */
+  padding: 0 18px;           /* same side padding */
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f5f7ff;
+  font-weight: 700;
+  color: #0f172a;
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(17,24,39,.06);
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+/* Active/hover states */
+.topbar .nav a.active {
+  background: #e9efff;
+  border-color: #c7d2fe;
+}
+.topbar .nav a:hover,
+.topbar .nav button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(99,102,241,.14);
+}
+
+/* Optional: force the SAME WIDTH for all three pills */
+ /* Uncomment if you want equal widths, not just equal height.
+.topbar .nav a,
+.topbar .nav button {
+  min-width: 120px;
+}
+*/
+
+/* Breadcrumbs */
+.crumbs { margin: 6px 0 8px; color: var(--muted); }
+.crumbs a { color: inherit; text-decoration: none; }
+.crumbs span { margin: 0 6px; }
+.crumbs span:nth-child(2) { opacity: .6; }
+
+/* Course hero */
+.course-hero {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px;
+  border: 1px solid var(--ring); border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #f6f9ff);
+  box-shadow: 0 6px 18px rgba(17,24,39,.06);
+  margin-bottom: 14px;
+}
+.course-title { margin: 0 0 6px; font-size: clamp(28px, 4vw, 44px); }
+.meta { color: var(--muted); }
+.meta .chip {
+  display: inline-block; margin-right: 6px;
+  padding: 4px 10px; border:1px solid #e5e7eb; background:#fff; border-radius:999px;
+  font-weight: 600;
+}
+
+/* ===== Colored Course Hero ===== */
+.course-hero.colored {
+  position: relative;
+  background:
+    radial-gradient(800px 180px at 20% -10%, rgba(255,255,255,.9), rgba(255,255,255,0) 70%),
+    linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #0b1020;
+  border: none;
+  box-shadow: 0 10px 28px rgba(17,24,39,.10);
+}
+.course-hero-left { display:flex; align-items:center; gap:14px; }
+.course-mark {
+  width: 48px; height: 48px; border-radius: 12px; display:grid; place-items:center; font-size:24px;
+  background: rgba(255,255,255,.85); border: 1px solid rgba(255,255,255,.9);
+  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+}
+
+/* Accent chip & button */
+.chip.accent {
+  background: rgba(255,255,255,.9); border-color: rgba(255,255,255,.95); color: #0b1020;
+}
+
+/* ===== Sheet container ===== */
+.sheet {
+  background: #fff; border: 1px solid var(--ring); border-radius: 16px;
+  padding: 6px 12px; box-shadow: 0 4px 14px rgba(17,24,39,.05);
+}
+.toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 6px; border-bottom: 1px solid var(--ring); }
+.toolbar h3 { margin: 0; }
+.muted { color: var(--muted); }
+
+/* Quiz rows */
+.quiz-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 6px; border-bottom: 1px solid var(--ring);
+}
+.quiz-row:last-child { border-bottom: 0; }
+.row-hover { transition: background .12s ease; border-radius: 12px; }
+.row-hover:hover { background: #f8fbff; }
+.quiz-title { font-weight: 700; }
+.btn-group { display: flex; gap: 10px; }
+.empty { padding: 16px; }
+
+/* ===== Colored accents in lists ===== */
+.quiz-row-left { display:flex; align-items:center; gap:10px; }
+.accent-dot {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.9), 0 0 0 6px rgba(0,0,0,.04);
+}
+.row-hover:hover { background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.015)); }
+
+/* Larger panel look for each question */
+.panel-lg { padding: 18px; border-radius: 16px; }
+
+/* Segmented control */
+.seg { display: inline-flex; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:12px; padding:4px; gap:4px; }
+.seg-btn { border:0; padding:8px 12px; border-radius:10px; background:transparent; cursor:pointer; font-weight:600; }
+.seg-btn.active { background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+.seg-btn.disabled{ opacity:.5; cursor:not-allowed; }
+
+/* Settings panel */
+.panel { margin-top:14px; padding:12px; border:1px solid var(--ring); border-radius:12px; background:#fff; }
+.panel-title { font-weight:700; margin-bottom:8px; }
+.settings-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:10px; align-items:start; }
+.settings-grid.tight { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; align-items: end; }
+.field { display:flex; flex-direction:column; gap:6px; }
+
+/* Pill toggle */
+:root { --control-h: 44px; --label-spacer-h: 22px; }
+.pill-toggle {
+  display: inline-flex; align-items: center; gap: 10px;
+  height: var(--control-h); padding: 0 12px;
+  border: 1px solid #e5e7eb; background: #f8fafc; border-radius: 12px; font-weight: 600; user-select: none;
+}
+.pill-toggle input { accent-color: #2563eb; }
+.field.no-label { display:flex; flex-direction:column; gap:6px; }
+.field.no-label .label-spacer { display:block; height: var(--label-spacer-h); }
+
+/* Session hero */
+.session-hero{
+  display:flex; align-items:center; justify-content:space-between; gap:14px; padding:16px 18px; margin-bottom:12px;
+  border:1px solid var(--ring); border-radius:14px; background: linear-gradient(180deg,#fff,#f7fbff);
+}
+.session-title{ margin:0; font-size:clamp(24px,3.5vw,40px); }
+
+/* Status pill */
+.status-pill{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px; border-radius:999px; font-weight:700; font-size:.85rem;
+  border:1px solid #e5e7eb; background:#f3f4f6; text-transform:capitalize;
+}
+.status-waiting{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+.status-live{ background:#ecfeff; border-color:#a5f3fc; color:#0e7490; }
+.status-paused{ background:#fef9c3; border-color:#fde68a; color:#8b5e00; }
+.status-ended{ background:#fee2e2; border-color:#fecaca; color:#991b1b; }
+
+/* Session code badge */
+.code-badge{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px; background:#fff; border:1px solid #e5e7eb; border-radius:10px;
+}
+
+/* Tiny avatars in waiting room */
+.avatar{
+  width:28px; height:28px; border-radius:50%; display:grid; place-items:center;
+  background:#e0e7ff; color:#111827; font-weight:700; font-size:.8rem; border:1px solid #c7d2fe;
+}
+
+/* Sheet with subtle gradient border (optional) */
+.sheet-colored{
+  position:relative;
+  background: linear-gradient(#fff, #fff) padding-box, linear-gradient(135deg, var(--accent), var(--accent2)) border-box;
+  border: 1px solid transparent; border-radius: 16px;
+}
+
+/* Student preview card */
+.student-card { background:#fff; border:1px solid var(--ring); border-radius:12px; padding:12px; }
+.s-prompt { font-weight:700; margin-bottom:8px; }
+.col { display:flex; flex-direction:column; }
+.opt { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid #e5e7eb; border-radius:10px; background:#f9fafb; }
+
+/* Image uploader */
+.uploader { border:1px dashed #cbd5e1; background:#fafafa; padding:12px; border-radius:12px; text-align:center; }
+.uploader-preview { text-align:center; }
+.uploader-img { max-width:100%; border-radius:10px; border:1px solid var(--ring); display:block; margin:0 auto 8px; }
+
+/* ===== Courses page — compact card size like the reference ===== */
+
+/* Flexible grid; three across on typical desktops, but no hard rule */
+.courses-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap:20px;
+  align-items:stretch;
+  margin:8px 0 24px;
+}
+
+/* Card sizing/typography tweaks (leaner than the tall version) */
+.courses-grid .gcard{ 
+  padding:16px; 
+  border-radius:16px; 
+  min-height:auto;       /* let content dictate height */
+}
+
+.courses-grid .g-emoji{ font-size:24px; }
+.courses-grid .g-code{ padding:6px 10px; font-size:.85rem; }
+.courses-grid .g-title{ font-size:1.35rem; line-height:1.2; font-weight:800; margin:4px 0 6px; }
+.courses-grid .g-sub{ font-size:.95rem; }
+.courses-grid .g-bottom{ margin-top:auto; }  /* keeps the button row at the bottom */
+
+/* Make the "Open" pill bold on course cards */
+.courses-grid .gcard .btn.secondary { font-weight: 800; }
+/* Bigger arrow on course cards */
+.courses-grid .gcard .g-arrow{
+  font-size: 26px;     /* try 22–26px to taste */
+  line-height: 1;      
+}
+/* === Compact course cards (smaller height & typography) === */
+
+.courses-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* allow more cards per row */
+  gap: 16px;                                                  /* a little tighter */
+  align-items: stretch;
+  margin: 8px 0 20px;
+}
+
+.gcard.course-card{
+  min-height: 120px;       /* down from 160–230 */
+  padding: 14px 16px;      /* tighter padding */
+  border-radius: 16px;     /* slightly smaller corners */
+}
+
+/* Top row bits */
+.gcard.course-card .g-emoji{ font-size: 20px; }
+.gcard.course-card .g-code{
+  padding: 4px 9px;
+  font-size: .80rem;
+}
+
+/* Title & subtitle */
+.gcard.course-card .g-title{
+  font-size: clamp(18px, 1.6vw, 24px);
+  line-height: 1.15;
+  margin: 2px 0 4px;
+}
+.gcard.course-card .g-sub{
+  font-size: .90rem;
+}
+
+/* Bottom row */
+.gcard.course-card .g-bottom{ margin-top: auto; }
+.gcard.course-card .btn{
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 800;     /* keeps “Open” bold */
+  font-size: .95rem;
+}
+
+/* If you sized the arrow earlier, keep it tidy here too */
+.courses-grid .gcard .g-arrow{ font-size: 24px; line-height: 1; }
+/* Smaller "Open" button inside course cards */
+/* Make the "Open" pill tighter on course cards */
+.courses-grid .gcard.course-card .g-bottom .btn.secondary {
+  padding: 4px 9px !important;   /* trims white space around the text */
+  line-height: 1;                 /* removes extra vertical height from line box */
+  border-radius: 10px;            /* keep it rounded but smaller */
+  /* font-size stays as-is */
+}
+
+/* Keep course cards the same size even when filtering */
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 340px); /* fixed card width */
+  gap: 20px;
+  justify-content: start; /* don't stretch tracks to fill the row */
+}
+
+/* Optional: keep it full-width on small screens */
+@media (max-width: 680px) {
+  .courses-grid {
+    grid-template-columns: 1fr;      /* single column on phones */
+    justify-content: stretch;
+  }
+}
+
+/* 1) Kill the parent flex so the inner row can take full width */
+.session-hero-pro { 
+  display: block;                 /* overrides .course-hero { display:flex } */
+}
+
+/* 2) Ensure the inner row is full-width and is a flex row */
+.session-hero-pro .hero-split {
+  display: flex;
+  align-items: center;
+  width: 100%;                    /* <— important */
+}
+
+/* 3) Push the code chip all the way to the right */
+.session-hero-pro .hero-right-right {
+  margin-left: auto;              /* <— does the push */
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* (optional) Let the left cluster claim available space */
+.session-hero-pro .hero-left {
+  flex: 1 1 auto;
+}
+
+
+/* Left: icon + title + status */
+.hero-left{ display:flex; align-items:center; gap:16px; }
+.hero-left.tight{ gap:14px; }
+.hero-emoji{
+  width:54px;height:54px;border-radius:14px;
+  display:grid;place-items:center;font-size:28px;
+  background:rgba(255,255,255,.88);
+  border:1px solid rgba(255,255,255,.95);
+  box-shadow:0 10px 22px rgba(0,0,0,.08);
+}
+
+/* Right: session code chip */
+hero-right-right{
+   margin-left: auto;         /* <— this pushes it all the way right */
+   display: flex;
+   align-items: center;
+   justify-content: flex-end;
+   gap: 10px;
+ }
+.code-chip{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 12px; border-radius:999px;
+  background:rgba(255,255,255,.92);
+  border:1px solid rgba(255,255,255,.95);
+  font-weight:800; box-shadow:0 1px 2px rgba(17,24,39,.06);
+}
+.code-chip b{ letter-spacing:.5px; }
+.copy-btn{
+  display:grid; place-items:center; width:26px; height:26px;
+  border-radius:999px; border:1px solid rgba(17,24,39,.08);
+  background:#fff; cursor:pointer;
+  transition:transform .05s ease, box-shadow .12s ease, background .12s ease;
+  box-shadow:0 1px 2px rgba(17,24,39,.08);
+}
+.copy-btn:hover{ box-shadow:0 2px 6px rgba(17,24,39,.12); }
+.copy-btn:active{ transform: translateY(1px); }
+.copy-btn.copied{ background:#f0fdf4; border-color:#bbf7d0; }
+
+/* Responsive stack */
+@media (max-width: 820px){
+  .hero-split{ flex-direction:column; align-items:center; text-align:center; }
+  .hero-right-right{ justify-content:center; }
+}
+/* Only the lecturer session page gets tighter margins/padding */
+.session-page { 
+  padding-top: 12px;          /* was 24px via .container */
+  padding-bottom: 16px;
+}
+.session-page .seg { 
+  margin-top: 6px; 
+  margin-bottom: 10px;        /* was 12px */
+}
+
+/* === LiveBarChart === */
+.lbc-root { width: 100%; }
+.lbc-bars{
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  align-items: end;
+  padding: 8px 4px 2px;
+  min-height: 180px;
+}
+.lbc-bar{
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+  background: linear-gradient(180deg,#f8fafc,#f1f5f9);
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: inset 0 -2px 0 rgba(17,24,39,.03);
+  overflow: hidden;
+}
+.lbc-fill{
+  width: 100%;
+  background: linear-gradient(180deg, rgba(99,102,241,.9), rgba(59,130,246,.9));
+  transition: height .25s ease;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+.lbc-meta{
+  position: absolute;
+  inset: auto 0 6px 0;
+  display: grid;
+  gap: 2px;
+  place-items: center;
+  pointer-events: none;
+}
+.lbc-label{
+  max-width: 92%;
+  font-weight: 700;
+  font-size: .85rem;
+  text-align: center;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+.lbc-count{
+  font-size: .8rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  color: #0f172a;
+}
+.lbc-legend{ margin-top: 6px; text-align: right; }
+
+/* ---------- Live layout ---------- */
+.live-grid{
+  display:grid;
+  grid-template-columns: 360px 1fr;
+  gap:16px;
+  align-items:start;
+}
+
+.qr-prompt{
+  font-weight:800;
+  font-size:1.1rem;
+  margin-bottom:10px;
+}
+
+.qr-options-hint{
+  display:flex; flex-wrap:wrap; gap:8px;
+  margin-bottom:10px;
+}
+.qr-chip{
+  padding:6px 10px; border-radius:10px;
+  background:#f8fafc; border:1px solid #e5e7eb;
+  font-weight:700; font-size:.85rem;
+}
+
+.qr-list{ list-style:none; padding:0; margin:8px 0 0; }
+.qr-list li{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 12px; border:1px solid var(--ring);
+  border-radius:10px; background:#fff; margin-bottom:8px;
+}
+.qr-count{
+  display:inline-block; min-width:28px; text-align:center;
+  background:#eef2ff; border:1px solid #e5e7eb; border-radius:999px;
+  padding:2px 8px; font-weight:800;
+}
+.qr-blanks{ margin-top:8px; }
+
+/* ---------- Live Bar Chart ---------- */
+.lbc-root{ width:100%; }
+.lbc-bars{
+  display:flex; align-items:flex-end; gap:12px;
+  height: 240px; padding:8px 4px; border:1px solid var(--ring);
+  background:#fff; border-radius:12px;
+}
+.lbc-bar{
+  flex:1; min-width:80px; display:flex; flex-direction:column; align-items:center; gap:8px;
+}
+.lbc-fill{
+  width:100%; border-radius:10px; background:linear-gradient(180deg, #60a5fa, #2563eb);
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,.4), 0 6px 14px rgba(37,99,235,.18);
+  transition:height .25s ease;
+}
+.lbc-meta{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  width:100%;
+}
+.lbc-label{ font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lbc-count{
+  min-width:28px; text-align:center; border:1px solid #e5e7eb; background:#f8fafc;
+  border-radius:999px; font-weight:800; padding:2px 8px;
+}
+.lbc-legend{ margin-top:8px; }
+
+/* keep your existing styles below… */
+/* --- Live layout: participants left, results right --- */
+.live-grid{
+  display:grid;
+  grid-template-columns: 320px 1fr;
+  gap:16px;
+  align-items:start;
+}
+
+/* Question prompt (single, non-duplicated) */
+.q-prompt{
+  margin: 2px 0 12px;
+  font-size: clamp(18px, 2.6vw, 22px);
+  line-height: 1.28;
+}
+
+/* Timer pill in the hero strip */
+.timer-pill{
+  margin-left: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(17,24,39,.1);
+  background: #fff;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(17,24,39,.08);
+}
+
+/* ===== Horizontal Bars ===== */
+.bars{ display:flex; flex-direction:column; gap:10px; }
+.bar-row{
+  display:grid;
+  grid-template-columns: 220px 1fr max-content;
+  align-items:center;
+  gap:10px;
+}
+.bar-label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.bar-label .index{
+  background: rgba(99,102,241,.12);
+  border: 1px solid rgba(99,102,241,.26);
+}
+.label-ellipsis{
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-weight:700;
+}
+.bar-track{
+  position:relative;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(180deg,#f2f4f8,#e9eef7);
+  border: 1px solid #e5e7eb;
+  overflow:hidden;
+}
+.bar-fill{
+  height:100%;
+  border-radius:999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.6);
+  transition: width .35s ease;
+}
+.bar-count{
+  min-width: 84px;
+  text-align:right;
+}
+
+/* Thoughts list (pose-and-discuss) */
+.thoughts-box{
+  border:1px solid var(--ring);
+  background:#fff;
+  border-radius:12px;
+  padding:10px;
+}
+.thoughts{
+  list-style:none;
+  padding:0; margin:0; display:flex; flex-direction:column; gap:8px;
+}
+.thoughts li{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:8px;
+  background:#f8fafc;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  padding:8px 10px;
+  font-weight:600;
+}
+.thoughts .bubble{
+  display:inline-grid; place-items:center;
+  min-width:28px; height:28px;
+  border-radius:999px; background:#fff;
+  border:1px solid #e5e7eb;
+}
+
+/* Responsive: stack left/right on small screens */
+@media (max-width: 960px){
+  .live-grid{ grid-template-columns: 1fr; }
+  .bar-row{ grid-template-columns: 1fr; gap:6px; }
+  .bar-count{ text-align:left; }
+}
+
+/* Lecturer page tighter spacing */
+.session-page { padding-top: 12px; padding-bottom: 16px; }
+.session-page .seg { margin-top: 6px; margin-bottom: 10px; }
+
+/* ========== Timer pill ========== */
+.timer-pill{
+  margin-left: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(17,24,39,.1);
+  background: #fff;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(17,24,39,.08);
+}
+
+/* ========== Live layout (participants left, results right) ========== */
+.live-grid{
+  display:grid;
+  grid-template-columns: 320px 1fr;
+  gap:16px;
+  align-items:start;
+}
+
+/* Question prompt (single, non-duplicated) */
+.q-prompt{
+  margin: 2px 0 12px;
+  font-size: clamp(18px, 2.6vw, 22px);
+  line-height: 1.28;
+}
+
+/* ========== Horizontal Bars (LiveBarChart) ========== */
+.bars{ display:flex; flex-direction:column; gap:10px; }
+.bar-row{
+  display:grid;
+  grid-template-columns: 220px 1fr max-content;
+  align-items:center;
+  gap:10px;
+}
+.bar-label{ display:flex; align-items:center; gap:8px; min-width:0; }
+.bar-label .index{ background: rgba(99,102,241,.12); border: 1px solid rgba(99,102,241,.26); }
+.label-ellipsis{
+  min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700;
+}
+.bar-track{
+  position:relative; height: 14px; border-radius: 999px;
+  background: linear-gradient(180deg,#f2f4f8,#e9eef7);
+  border: 1px solid #e5e7eb; overflow:hidden;
+}
+.bar-fill{
+  height:100%; border-radius:999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.6);
+  transition: width .35s ease;
+}
+.bar-count{ min-width: 84px; text-align:right; }
+
+/* Thoughts (pose & discuss) */
+.thoughts-box{ border:1px solid var(--ring); background:#fff; border-radius:12px; padding:10px; }
+.thoughts{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
+.thoughts li{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:8px 10px; font-weight:600;
+}
+.thoughts .bubble{
+  display:inline-grid; place-items:center; min-width:28px; height:28px;
+  border-radius:999px; background:#fff; border:1px solid #e5e7eb;
+}
+
+/* Responsive fallback for bars & layout */
+@media (max-width: 960px){
+  .live-grid{ grid-template-columns: 1fr; }
+  .bar-row{ grid-template-columns: 1fr; gap:6px; }
+  .bar-count{ text-align:left; }
+}
+
+/* shared disabled look */
+.btn:disabled,
+.btn.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;          /* belt & braces */
+}
+
+/* optional: soften backgrounds for variants */
+.btn.primary:disabled,
+.btn.primary.is-disabled {
+  background: #d1d5db;           /* gray-300 */
+  border-color: #d1d5db;
+  color: #111827;                 /* gray-900 for contrast */
+}
+
+.btn.secondary:disabled,
+.btn.secondary.is-disabled {
+  background: #f3f4f6;           /* gray-100 */
+  border-color: #e5e7eb;         /* gray-200 */
+  color: #6b7280;                /* gray-500 */
+}
+
+/* Lecturer: student preview sizing */
+/* Wider student preview inside the control room */
+.student-preview {
+  width: 100%;
+  max-width: 720px;         /* baseline width */
+}
+
+.student-preview--wide {
+  max-width: 820px;         /* bump it wider */
+}
+
+/* On very large screens, let it breathe even more */
+@media (min-width: 1440px){
+  .student-preview--wide { max-width: 920px; }
+}
+
+/* Match student app spacing a bit closer */
+/* Make the student tab grid a single wide column */
+.grid--one {
+  grid-template-columns: 1fr !important;
+}
+
+/* Let the Card inside that grid grow, don’t cap it to a tiny column */
+.grid--one > .card {
+  width: 100%;
+  max-width: 920px;     /* tune to taste */
+}
+
+/* Center it a bit on very wide screens (optional) */
+@media (min-width: 1280px){
+  .grid--one {
+    justify-items: start;       /* keep left-aligned; change to center if you want */
+  }
+}
+
+/* Keep your wider preview sizing */
+.student-preview { width: 100%; max-width: 820px; }
+@media (min-width: 1440px){ .student-preview { max-width: 920px; } }
+
+.student-preview .card { padding: 18px; }
+
+/* Ensure the options layout snaps to two columns like the student page */
+.student-preview .options,
+.student-preview .answers,
+.student-preview .choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* If the layout ever gets narrow, stack them */
+@media (max-width: 560px){
+  .student-preview .options,
+  .student-preview .answers,
+  .student-preview .choices {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Make embedded images span the preview width nicely */
+.student-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  border: 1px solid var(--ring);
+}
+/* ---------------- Base tweaks (safe to add) ---------------- */
+:root{
+  --accent:#8b5cf6;      /* violet */
+  --accent2:#60a5fa;     /* sky */
+  --ring:#e5e7eb;
+  --text:#0f172a;
+  --muted:#6b7280;
+  --surface:#ffffff;
+  --chip:#0b1320;
+}
+*{ box-sizing:border-box; }
+.small{ font-size:12px; }
+.muted{ color:var(--muted); }
+
+/* ---------------- Analytics page ---------------- */
+.ana{
+  padding: 4px 16px 40px;
+}
+
+/* ---------- HERO (big pill) ---------- */
+.ana-hero{
+  margin: 8px auto 14px;
+  border-radius: 20px;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 300px at -10% 0%, var(--accent2) 0%, transparent 70%),
+    radial-gradient(1200px 300px at 110% 0%, var(--accent) 0%, transparent 70%),
+    linear-gradient(90deg, #f7fafc 0%, #ffffff 30%, #ffffff 70%, #f6f3ff 100%);
+}
+.ana-hero__inner{
+  height: 124px;
+  padding: 16px 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.ana-hero__left{
+  display:flex; align-items:center; gap: 14px;
+}
+.hero-icon{
+  display:inline-grid; place-items:center;
+  width:56px; height:56px; border-radius:14px;
+  background:#fff; border:1px solid var(--ring); font-size:28px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.06);
+}
+.hero-texts{ display:flex; flex-direction:column; justify-content:center; gap:4px; }
+.hero-title{
+  margin:0; font-size:34px; line-height:1; letter-spacing:.2px;
+  font-weight:800; color:var(--text);
+}
+.hero-sub{ font-size:13px; color:var(--muted); }
+
+.hero-code{
+  background:#fff; border:1px solid var(--ring); color:#0b1320;
+  padding:10px 18px; border-radius:999px; font-weight:800; letter-spacing:.5px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.06);
+}
+
+/* ---------- SELECTOR BAR ---------- */
+.ana-select{
+  margin: 8px auto 18px;
+  min-height: 74px;
+  border-radius: 16px;
+  background:
+    linear-gradient(90deg, #eef2ff 0%, #ffffff 20%, #fff 80%, #f0f9ff 100%);
+  border: 1px solid var(--ring);
+  display:flex; align-items:center; gap:14px;
+  padding: 14px;
+}
+.select-label{
+  padding:10px 16px;
+  background:#fff; border:1px solid var(--ring); border-radius:999px;
+  font-weight:600; color:#0b1320; white-space:nowrap;
+  box-shadow: 0 3px 8px rgba(0,0,0,.05);
+}
+.select-input{
+  appearance:none;
+  width:100%;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border:1.5px solid #cbd5e1;
+  font-size: 16px;
+  font-weight: 600;
+  color:#0f172a;
+  outline:none;
+  background:#ffffff url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center/20px;
+}
+.select-input:focus{ border-color:#a78bfa; box-shadow: 0 0 0 4px rgba(167,139,250,.15); }
+
+/* ---------- Sections / cards ---------- */
+.sheet{ background:#fff; border:1px solid var(--ring); border-radius:16px; padding:14px; margin-bottom:16px; }
+.toolbar{ display:flex; align-items:center; gap:10px; margin: 6px 0 12px; }
+.toolbar-title{ margin:0; font-size:18px; font-weight:700; }
+
+.kpi-grid{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.kpi{
+  display:flex; align-items:center; gap:12px; padding:10px 2px;
+}
+.kpi__icon{ font-size:22px; }
+.kpi__num{ font-size:32px; font-weight:800; color:var(--text); }
+
+/* Donut text styling */
+.donut__value{ font-size:18px; font-weight:800; fill:#0f172a; }
+.donut__label{ font-size:11px; fill:#6b7280; }
+
+/* Tables */
+.table{ width:100%; border-collapse: collapse; }
+.table th, .table td { padding:10px 8px; border-bottom:1px dashed #eef2f7; }
+.table thead th { font-weight:700; color:#475569; font-size:12px; text-transform:uppercase; letter-spacing:.35px; }
+.ellipsis { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* Mini KPI row in panels */
+.mini-kpis{
+  display:grid; grid-template-columns: 140px 140px 1fr;
+  gap:14px; align-items:center;
+}
+.mini__box{
+  background:#fff; border:1px solid var(--ring); border-radius:12px; padding:10px; height:120px;
+  display:flex; flex-direction:column; justify-content:center;
+}
+
+/* Progress bar */
+.progress__bar { background:#eef2ff; height:10px; border-radius:999px; overflow:hidden; margin-bottom:6px; }
+.progress__fill { height:100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+
+/* Score histogram (buckets) — cleaner, no clipping, nicer spacing */
+.hist{
+  display:flex; align-items:flex-end;
+  gap:14px; padding:10px 8px; margin-top:8px;
+}
+.hist__col{
+  width:64px; display:flex; flex-direction:column; align-items:center;
+}
+
+.hist__bar{
+  position:relative; width:100%; height:120px;
+  background:#f6f9ff; border:1px solid #e7eef9; border-radius:14px;
+  display:flex; align-items:flex-end; justify-content:center;
+  overflow:visible; /* <-- was hidden; let the count pill sit above */
+}
+
+.hist__fill{
+  width:86%;                /* inset a bit for nicer gutters */
+  min-height:6px;           /* zero still shows a sliver */
+  background:linear-gradient(180deg, var(--accent2), var(--accent));
+  border-radius:12px 12px 0 0;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5);
+  transition:height .25s ease, transform .2s ease;
+}
+
+.hist__bar:hover .hist__fill{
+  transform:translateY(-2px); /* subtle hover pop */
+}
+
+.hist__count{
+  position:absolute; top:-18px;
+  background:#fff; border:1px solid #dbeafe;
+  border-radius:999px; padding:2px 7px;
+  font-weight:700; font-size:12px; color:#0f172a;
+  box-shadow:0 4px 10px rgba(59,130,246,.15);
+}
+
+.hist__label{
+  margin-top:8px; font-size:12px; font-weight:600; color:#475569;
+  white-space:nowrap;
+}
+/* Taller container just for the histogram panel */
+.mini__box.hist-box{
+  height: 230px;                 /* more room so labels fit comfortably */
+  padding: 14px 16px 18px;       /* bit more bottom padding for labels */
+}
+
+/* Make each bar taller to match the larger box */
+.hist__bar{
+  height: 160px;                 /* was ~120; gives space for the centered pill */
+  overflow: visible;             /* keep counts visible */
+}
+
+/* Center the white count pill inside the bar */
+.hist__count{
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);  /* centered horizontally & vertically */
+  background: #fff;
+  border: 1px solid #dbeafe;
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-weight: 700;
+  font-size: 12px;
+  color: #0f172a;
+  box-shadow: 0 4px 10px rgba(59,130,246,.15);
+}
+
+/* (optional) a touch more breathing room under each label */
+.hist__label{
+  margin-top: 10px;
+}
+
+
+/* User badge */
+.badge{
+  background:#ecfeff; border:1px solid #a5f3fc; color:#0e7490; font-size:12px; padding:4px 8px; border-radius:999px;
+}
+
+/* Responsive */
+@media (max-width: 1100px){
+  .kpi-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .mini-kpis{ grid-template-columns: 140px 140px; }
+}
+@media (max-width: 640px){
+  .kpi-grid{ grid-template-columns: 1fr; }
+  .ana-hero__inner{ height: 110px; }
+  .hero-title{ font-size: 26px; }
+  .mini-kpis{ grid-template-columns: 1fr; }
+  
+}
+
+/* Center the numeric columns in "Marks per Quiz" */
+.table th.center,
+.table td.center {
+  text-align: center;
+}
+
+/* Space between each user card in Per-User Analytics */
+.user-list{
+  display: grid;              /* or: display:flex; flex-direction:column; */
+  grid-auto-rows: min-content;
+  gap: 14px;                  /* adjust to taste */
+}
+
+/* Fallback if gap isn't taking effect */
+.user-row + .user-row{
+  margin-top: 14px;
+}
+
+/* ---------- simple, accessible tooltips ---------- */
+.tooltip { position: relative; cursor: help; }
+
+.tooltip[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 10px);
+  background: #0f172a;            /* slate-900 */
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.35;
+  width: 280px;                    /* wraps nicely; adjust if needed */
+  max-width: min(70vw, 320px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease;
+  z-index: 40;
+  white-space: normal;
+}
+
+.tooltip[data-tip]::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 4px);
+  border: 6px solid transparent;
+  border-top-color: #0f172a;
+  opacity: 0;
+  transition: opacity .15s ease;
+  z-index: 41;
+}
+
+.tooltip:hover::after,
+.tooltip:hover::before {
+  opacity: 1;
+}
+
+/* ---------- Mobile-first polish ---------- */
+
+/* Keep SVG charts from overflowing */
+svg { max-width: 100%; height: auto; }
+
+/* Slightly smaller general padding on narrow screens */
+@media (max-width: 900px) {
+  .container { padding-left: 12px; padding-right: 12px; }
+
+  /* Top bar */
+  .topbar .brand { font-size: clamp(18px, 5vw, 28px); }
+  .topbar .nav .navlink { padding: 8px 12px; font-size: 14px; }
+
+  /* Hero section on Analytics */
+  .ana-hero { margin: 6px 0 12px; }
+  .ana-hero__content { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .ana-hero__right { width: 100%; justify-content: space-between; }
+
+  /* KPI grid: 2-up */
+  .kpi-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+
+  /* Small donuts + progress */
+  .donut__value { font-size: 16px; }
+  .donut__label { font-size: 10px; }
+  .progress__bar { height: 8px; }
+}
+
+/* Phone size */
+@media (max-width: 640px) {
+  /* 1-up grids/cards */
+  .kpi-grid,
+  .grid,
+  .mini-kpis { grid-template-columns: 1fr !important; gap: 10px; }
+
+  .card,
+  .panel { padding: 12px; }
+
+  /* Buttons/links: larger targets */
+  .btn,
+  .nav .navlink { padding: 8px 12px; font-size: 14px; border-radius: 999px; }
+
+  /* Inputs/selects: avoid iOS zoom + fit */
+  .input,
+  select.input { font-size: 16px; min-height: 40px; }
+
+  /* Quiz panels/users rows wrap nicely */
+  .quiz-panel .row,
+  .user-row .row { flex-wrap: wrap; gap: 8px; }
+
+  /* Histograms/buckets: slimmer bars and allow horizontal scroll if needed */
+  .hist { gap: 3px; }
+  .hist__bar { width: 8px; }
+  .mini__box.hist-box { overflow-x: auto; }
+
+  /* Tables: make them scrollable horizontally on very small screens */
+  .table { display: block; width: 100%; overflow-x: auto; }
+  .table thead th, .table td { white-space: nowrap; }
+
+  /* Space between user blocks */
+  .user-list .card { margin-bottom: 10px; }
+}
+
+/* Slightly bigger tap targets for the "Select a course" area */
+.ana-hero select.input { min-height: 42px; }
+
+/* Make small helper text a touch larger on phones */
+@media (max-width: 480px) {
+  .small { font-size: 12px; }
+}
+.mobile-sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: #fff;
+  padding-bottom: env(safe-area-inset-bottom, 8px);
+}
+/* ===== iOS mobile stability & polish ===== */
+
+/* Use modern viewport units so the address bar collapsing doesn't change heights */
+@supports (height: 100svh) {
+  html, body { min-height: 100svh; }
+}
+
+/* Reduce rubber-band and accidental auto-scroll reflows */
+html, body {
+  overscroll-behavior-y: contain;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Make sticky header cheaper to repaint on iOS */
+.topbar {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Backdrop blur can thrash on iOS during scroll; switch it off on phones */
+@media (max-width: 640px) {
+  .topbar {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: rgba(255,255,255,.96);
+  }
+}
+
+/* Keep the ticking timer from changing width each second */
+.timer-pill b,
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Reserve width for the timer so it never nudges layout */
+.chip.accent.timer-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 140px;          /* holds "Time left: 00:00" */
+}
+
+/* Don’t let SVG charts overspill on narrow phones */
+svg { max-width: 100%; height: auto; }
+
+/* Safer taps on iOS; avoids double-tap zoom lag */
+button, .btn { touch-action: manipulation; }
+
+/* Give sticky elements a safe bottom inset so iOS toolbars don’t overlap */
+.mobile-sticky { padding-bottom: env(safe-area-inset-bottom, 8px); }
+
+/* Slightly reduce general padding on small screens (keeps cards in view) */
+@media (max-width: 640px) {
+  .container { padding-left: 12px; padding-right: 12px; }
+  .card, .panel { padding: 12px; }
+  .table { display: block; width: 100%; overflow-x: auto; }
+  .table th, .table td { white-space: nowrap; }
+}
