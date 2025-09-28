@@ -5,16 +5,12 @@ import Spinner from "../components/Spinner.jsx";
 import { pickVisual, visualKeyFromCourse } from "../utils/visual";
 import { getMyCourses } from "../api/studentApi";
 
-/* ---------- Safe field helpers across mixed backends ---------- */
+// Safe field helpers across mixed backends
 const titleOf = (c) => c?.courseName || c?.title || "Untitled course";
 const codeOf  = (c) => c?.courseCode || c?.code || "";
 
-/**
- * Prefer lecturerId.name (your DB schema) or lecturer.name.
- * Then try string fallbacks. Avoid falling back to createdBy/owner
- * unless absolutely nothing else exists, because that’s how a student’s
- * name was showing up.
- */
+
+ 
 function instructorOf(c) {
   if (!c) return "";
 

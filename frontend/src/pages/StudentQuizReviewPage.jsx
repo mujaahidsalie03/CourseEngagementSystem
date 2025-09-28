@@ -167,7 +167,7 @@ export default function StudentQuizReviewPage() {
                   </div>
                 )}
 
-                {/* Your answer (all types) */}
+                {/* Your answer (all typdesss) */}
                 <div className="row" style={{ gap: 10, marginTop: 10 }}>
                   <span className="chip">Your answer</span>
                   <span className="small">

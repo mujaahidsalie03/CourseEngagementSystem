@@ -1,4 +1,10 @@
 // controllers/quizSessionController.js
+//Quiz session lifecycle controller: create/join/start/pause/resume/advance/submit
+// answers, session results, and per-student review.
+// req.user may be attached by auth middleware (id/role), but fallbacks exist.
+// Socket.IO server instance is stored on app as `app.set('io', io)`.
+// Timing is maintained centrally in socketService for consistent late-join sync.
+
 const QuizSession = require("../models/quizSessionModel");
 const Quiz = require("../models/quizModel");
 const Response = require("../models/responseModel");
@@ -6,22 +12,25 @@ const Course = require("../models/courseModel");
 const mongoose = require("mongoose");
 
 const {
-  getParticipantsForSession,
-  getTimingForSession,
-  setTimingForSession,
-  snapTimingForSession,
+  getParticipantsForSession, // in-memory participant tracker (for quick lookups)
+  getTimingForSession, // returns authoritative timing state for a session
+  setTimingForSession, // sets/resets timing state when questions change
+  snapTimingForSession, // computes derived fields (endsAt, remainingSeconds)
 } = require("../services/socketService");
 
+// Stable fallback id used where a question doc _id may not exist (older from earlier testing data)
 const stableQuestionId = (quizId, index) =>
   `${String(quizId)}:${Number(index)}`;
 
-/* ---------------- helpers ---------------- */
-// (… keep all your helpers exactly as-is …)
+// helpers
+// Normalize text for comparisons (case/space) used by FIB grading.
 const normText = (s, { caseSensitive = false, trimWhitespace = true } = {}) => {
   let v = String(s ?? "");
   if (trimWhitespace) v = v.trim();
   return caseSensitive ? v : v.toLowerCase();
 };
+
+// Utility to detect "fill in the blank" across legacy spellings.
 const isFIB = (t) =>
   ["fill_in_the_blank", "fill_blank", "fill-in-the-blank"].includes(
     String(t || "")
@@ -29,11 +38,13 @@ const isFIB = (t) =>
       .replaceAll("-", "_")
   );
 
+  // Ensure blanks are arrays-of-arrays (each blank may have multiple accepted answers).
 const normalizeBlanksShape = (blanks) =>
   Array.isArray(blanks)
     ? blanks.map((b) => (Array.isArray(b) ? b : b == null ? [] : [b]))
     : [];
 
+// Simple 6-char alphanumeric join code (retry loop on collision).
 const generateSessionCode = () => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let out = "";
@@ -42,6 +53,7 @@ const generateSessionCode = () => {
   return out;
 };
 
+// User/role helpers: tolerate dev setups (headers/body fallbacks).
 const getUserId = (req) =>
   (req.user && (req.user._id || req.user.id)) ||
   req.header("x-user-id") ||
@@ -50,6 +62,9 @@ const getUserId = (req) =>
 const getUserRole = (req) =>
   (req.user && req.user.role) || req.body.role || "student";
 
+// Basic access rules per role and session status.
+// Lecturer must be owner of the seession
+// Student can join if session is waiting OR active (when allowLateJoin is true).
 const validateSessionAccess = (session, userId, role) => {
   if (role === "lecturer") return String(session.createdBy) === String(userId);
   if (role === "student") {
@@ -61,7 +76,7 @@ const validateSessionAccess = (session, userId, role) => {
   return false;
 };
 
-// (… keep the rest of your parsing helpers unchanged …)
+// Template parsing helpers (single vs double braces)
 function parseSingleBraced(tpl = "") {
   const re = /\{([^}]+)\}/g;
   const out = [];
@@ -88,6 +103,9 @@ function parseDoubleBraced(tpl = "") {
   }
   return out;
 }
+
+// Resolve expected blanks for a question from q.blanks, or derive from template.
+// Supports both {{double}} and {single} brace syntaxes for compatibility (found this problem when merging work)
 function normalizeExpectedBlanks(q) {
   let expected = Array.isArray(q.blanks) ? q.blanks : [];
   if (!expected.length && q.template) {
@@ -104,6 +122,8 @@ function normalizeExpectedBlanks(q) {
   });
   return expected;
 }
+
+//Kept for completeness; same as parseSingleBraced (used by some flows).
 function parseTemplateBlanks(template = "") {
   const re = /\{([^}]+)\}/g;
   const out = [];
@@ -118,6 +138,7 @@ function parseTemplateBlanks(template = "") {
   return out;
 }
 
+// Build a student-safe question payload for the live session (no correctness flags).
 const prepareQuestionForStudents = (q, index, quizId) => {
   const out = {
     id: String(q?._id || stableQuestionId(quizId, index)),
@@ -130,11 +151,13 @@ const prepareQuestionForStudents = (q, index, quizId) => {
     index,
   };
   if (q.questionType === "mcq") {
+    // Only the answer text, no isCorrect
     out.answers = (q.answers || []).map((a) => ({ answerText: a.answerText }));
   } else if (q.questionType === "word_cloud") {
     out.maxSubmissions = q.maxSubmissions || 1;
     out.allowAnonymous = q.allowAnonymous || false;
   } else if (q.questionType === "fill_in_the_blank") {
+    // Provide template + blanks (for rendering inputs) and comparison flags
     out.template = q.template;
     out.blanks = q.blanks;
     out.caseSensitive = !!q.caseSensitive;
@@ -143,6 +166,13 @@ const prepareQuestionForStudents = (q, index, quizId) => {
   return out;
 };
 
+
+// Normalize inbound answers from various client shapes into a consistent record.
+// Accepts
+//{ answer: { type, text, blanks:[] } } (object)
+// { answer: [..] } (array)
+//  { answer: "a | b" } (string for FIB)
+//  Raw arrays/strings as body (legacy)
 function normalizeIncomingAnswer(q, body) {
   const raw = body?.answer ?? body;
 
@@ -172,7 +202,7 @@ function normalizeIncomingAnswer(q, body) {
     return { answerText: arr.join(" | "), blanksArray: arr };
   }
 
-  // ✅ NEW: if a plain string arrives for a FIB question, split it
+  //if a plain string arrives for a FIB question, split it
   const asStr = String(raw ?? "").trim();
   const qtype = String(q?.questionType || "")
     .toLowerCase()
@@ -190,8 +220,8 @@ function normalizeIncomingAnswer(q, body) {
   return { answerText: asStr };
 }
 
-/* ---------------- controllers ------------- */
-
+// controllers
+// Create a new live quiz session (lecturer only implied; no hard role check here)
 exports.createSession = async (req, res) => {
   // (unchanged)
   try {
@@ -208,6 +238,7 @@ exports.createSession = async (req, res) => {
     if (!quizId)
       return res.status(400).json({ message: "Quiz ID is required" });
 
+    // Resolve quiz + ensure it is linked to a course (supports multiple field names)
     const quiz = await Quiz.findById(quizId).select(
       "_id title course courseId course_id questions"
     );
@@ -226,11 +257,13 @@ exports.createSession = async (req, res) => {
         .json({ message: "Quiz is not linked to a course" });
     }
 
+// Backfill quiz.course if missing
     if (!quiz.course || String(quiz.course) !== derivedCourse) {
       quiz.course = derivedCourse;
       await quiz.save();
     }
 
+    // Generate unique join code (max 10 attempts)
     let code,
       ok = false,
       tries = 0;
@@ -246,7 +279,7 @@ exports.createSession = async (req, res) => {
       return res
         .status(500)
         .json({ message: "Failed to generate unique session code" });
-
+// Create session with initial waiting status
     const session = await QuizSession.create({
       quiz: quizId,
       course: derivedCourse,
@@ -272,6 +305,8 @@ exports.createSession = async (req, res) => {
   }
 };
 
+// POST /api/sessions/join
+// Student/lecturer joins a session by code (ensures course match & status)
 exports.joinSession = async (req, res) => {
   // (unchanged)
   try {
@@ -284,6 +319,7 @@ exports.joinSession = async (req, res) => {
     if (!userId)
       return res.status(401).json({ message: "Unauthorized (no user)" });
 
+    // Only allow join if session is waiting/active
     const session = await QuizSession.findOne({
       sessionCode: String(sessionCode).toUpperCase(),
       status: { $in: ["waiting", "active"] },
@@ -294,7 +330,7 @@ exports.joinSession = async (req, res) => {
         .status(404)
         .json({ message: "Session not found or has ended" });
     }
-
+// Canonicalize course id on the session (from session or quiz)
     const quizCourse =
       (session.quiz?.course && String(session.quiz.course)) ||
       (session.quiz?.courseId && String(session.quiz.courseId)) ||
@@ -316,6 +352,7 @@ exports.joinSession = async (req, res) => {
         .json({ message: "Session is not linked to a course" });
     }
 
+    // Enforce the "join from same course page" rule
     if (
       !fromPageCourseId ||
       String(fromPageCourseId) !== String(canonicalCourseId)
@@ -329,6 +366,7 @@ exports.joinSession = async (req, res) => {
       return res.status(403).json({ message: "Cannot join this session" });
     }
 
+ // Add participant if new; otherwise ignore duplicate
     const exists = (session.participants || []).some(
       (p) => String(p.user) === String(userId)
     );
@@ -340,7 +378,7 @@ exports.joinSession = async (req, res) => {
       });
       await session.save();
     }
-
+// Notify room (for live participant counters)
     const io = req.app.get("io");
     if (io && role === "student") {
       io.to(`session:${session._id}`).emit("participant_joined", {
@@ -368,6 +406,8 @@ exports.joinSession = async (req, res) => {
   }
 };
 
+//GET /api/sessions/:sessionId
+// Get current session state; students must be participants
 exports.getSession = async (req, res) => {
   // (unchanged)
   try {
@@ -390,12 +430,13 @@ exports.getSession = async (req, res) => {
           .json({ message: "Join required for this session" });
       }
     }
+    // Base payload common to both roles
     const data = {
       sessionId: s._id,
       sessionCode: s.sessionCode,
-      code: s.sessionCode,
+      code: s.sessionCode, //for compatibility
       status: s.status,
-      currentQuestionIndex: s.currentQuestionIndex,
+      currentQuestionIndex: s.currentQuestionIndex, //for compatibility
       currentIndex: s.currentQuestionIndex,
       startedAt: s.startedAt,
       settings: s.settings,
@@ -405,12 +446,14 @@ exports.getSession = async (req, res) => {
         id: p.user?._id || p.user,
         name: p.user?.name || "Student",
       })),
-      pendingLate: [],
+      pendingLate: [], // placeholder for future late-join logic
     };
 
     if (role === "lecturer") {
+      // Full quiz for lecturer dashboard
       data.quiz = s.quiz;
     } else {
+      // Students get only metadata and the current question (if active)
       data.quiz = {
         _id: s.quiz._id,
         title: s.quiz.title,
@@ -432,6 +475,8 @@ exports.getSession = async (req, res) => {
   }
 };
 
+//POST /api/sessions/:sessionId/start
+// Start a session (lecturer), emit first question + authoritative timing
 exports.startSession = async (req, res) => {
   try {
     const { sessionId } = req.params;
@@ -448,6 +493,7 @@ exports.startSession = async (req, res) => {
         .status(400)
         .json({ message: "Session already started or ended" });
 
+        // Transition to active first question
     s.status = "active";
     s.startedAt = new Date();
     s.currentQuestionIndex = 0;
@@ -460,7 +506,7 @@ exports.startSession = async (req, res) => {
       s.quiz._id
     );
 
-    // ✅ SET TIMING STATE (authoritative)
+    // SET TIMING STATE (authoritative)
     const startedAt = Date.now();
     setTimingForSession(sessionId, {
       questionStartedAt: startedAt,
@@ -469,9 +515,11 @@ exports.startSession = async (req, res) => {
       pauseAccumMs: 0,
     });
 
+    // Compute derived timing fields for consistent client display
     const now = Date.now();
     const ts = snapTimingForSession(sessionId, now);
 
+    // Broadcast "quiz_started" with timing payload so late joiners sync correctly.
     if (io) {
       io.to(`session:${sessionId}`).emit("quiz_started", {
         question: first,
@@ -485,7 +533,7 @@ exports.startSession = async (req, res) => {
         remainingSeconds: ts.remainingSeconds,
       });
 
-      // reset distribution
+      //Reset any live aggregates (distributions) for first question
       io.to(`session:${sessionId}`).emit("answers_update", {
         questionId: String(s.quiz.questions[0]._id),
         questionIndex: 0,
@@ -513,6 +561,8 @@ exports.startSession = async (req, res) => {
   }
 };
 
+//POST /api/sessions/:sessionId/pause
+// Pause timing for current question (lecturer)
 exports.pauseSession = async (req, res) => {
   try {
     const { sessionId } = req.params;
@@ -524,6 +574,7 @@ exports.pauseSession = async (req, res) => {
 
     await s.pauseSession();
 
+// Mark pausedAt in timing state (used by snapTimingForSession)
     const t = getTimingForSession(sessionId);
     if (t && !t.pausedAt) t.pausedAt = Date.now();
 
@@ -547,7 +598,10 @@ exports.pauseSession = async (req, res) => {
   }
 };
 
-exports.resumeSession = async (req, res) => {
+// POST /api/sessions/:sessionId/resume
+// Resume timing for current question (lecturer)
+// Lecturer access
+ exports.resumeSession = async (req, res) => {
   try {
     const { sessionId } = req.params;
     const userId = getUserId(req);
@@ -558,6 +612,7 @@ exports.resumeSession = async (req, res) => {
 
     await s.resumeSession();
 
+     // Adjust accumulated pause time so remainingSeconds is accurate
     const t = getTimingForSession(sessionId);
     const now = Date.now();
     if (t && t.pausedAt) {
@@ -583,6 +638,8 @@ exports.resumeSession = async (req, res) => {
   }
 };
 
+//POST /api/sessions/:sessionId/next
+// Advance to next (or specified) question, reset timing, emit updates
 exports.nextQuestion = async (req, res) => {
   try {
     const { sessionId } = req.params;
@@ -596,8 +653,10 @@ exports.nextQuestion = async (req, res) => {
     if (!s.quiz || !s.quiz.questions.length)
       return res.status(400).json({ message: "Quiz has no questions" });
 
+    // Compute next index or explicit target
     const idx =
       typeof nextIndex === "number" ? nextIndex : s.currentQuestionIndex + 1;
+      // No more questions => end session
     if (idx >= s.quiz.questions.length) {
       s.status = "completed";
       s.endedAt = new Date();
@@ -607,6 +666,7 @@ exports.nextQuestion = async (req, res) => {
       return res.json({ sessionId, status: "completed" });
     }
 
+    // Update session index
     await s.advanceToQuestion(idx);
     const q = prepareQuestionForStudents(
       s.quiz.questions[idx],
@@ -614,7 +674,7 @@ exports.nextQuestion = async (req, res) => {
       s.quiz._id
     );
 
-    // ✅ RESET TIMING STATE for the new question
+    // RESET TIMING STATE for the new question
     const startedAt = Date.now();
     setTimingForSession(sessionId, {
       questionStartedAt: startedAt,
@@ -625,6 +685,7 @@ exports.nextQuestion = async (req, res) => {
     const now = Date.now();
     const ts = snapTimingForSession(sessionId, now);
 
+    // Broadcast next_question + reset aggregates for charts
     const io = req.app.get("io");
     if (io)
       io.to(`session:${sessionId}`).emit("next_question", {
@@ -647,7 +708,7 @@ exports.nextQuestion = async (req, res) => {
     if (io)
       io.to(`session:${sessionId}`).emit("new_response", {
         questionIndex: idx,
-        responseCount: 0, // 👈 hard reset
+        responseCount: 0, // reset count for UI
       });
 
     res.json({
@@ -665,8 +726,14 @@ exports.nextQuestion = async (req, res) => {
   }
 };
 
+// POST /api/sessions/:sessionId/submit
+// Submit an answer for the current question. Handles MCQ, Poll, FIB, etc.
+
+// Notes on grading:
+// MCQ: exact text match with a correct option.
+// Poll / pose_and_discuss / word_cloud: any non-empty answer earns points.
+// FIB: compare each blank against allowed alternatives, honoring case/trim flags.
 exports.submitAnswer = async (req, res) => {
-  // (UNCHANGED from your version)
   try {
     const { sessionId } = req.params;
     const { questionIndex, timeSpent = 0 } = req.body;
@@ -685,6 +752,7 @@ exports.submitAnswer = async (req, res) => {
     const q = s.quiz.questions[questionIndex];
     if (!q) return res.status(400).json({ message: "Question not found" });
 
+    // Prevent duplicate submissions by same user for same question
     const dupe = await Response.findOne({
       $or: [
         { session: sessionId, student: userId, questionIndex },
@@ -696,11 +764,13 @@ exports.submitAnswer = async (req, res) => {
         .status(400)
         .json({ message: "Answer already submitted for this question" });
 
+        // Normalize incoming answer into {answerText, blanksArray?}
     const { answerText, blanksArray } = normalizeIncomingAnswer(q, req.body);
 
     let pointsEarned = 0,
       isCorrect = false;
 
+      // Type-specific grading
     switch (q.questionType) {
       case "mcq": {
         const cleaned = String(answerText || "").trim();
@@ -723,19 +793,23 @@ exports.submitAnswer = async (req, res) => {
         break;
       }
       case "fill_in_the_blank": {
+        // Build expected alternatives (from q.blanks or template)
         const expected = normalizeExpectedBlanks(q);
+        // Accept either array form or pipe-separated string
         const given = Array.isArray(blanksArray)
           ? blanksArray.map((s) => String(s ?? "").trim())
           : String(answerText || "")
               .split("|")
               .map((s) => s.trim())
               .filter(Boolean);
+              // Require at least as many answers as there are blanks
         if (expected.length && given.length >= expected.length) {
           const norm = (s) =>
             normText(s, {
               caseSensitive: !!q.caseSensitive,
               trimWhitespace: q.trimWhitespace !== false,
             });
+            // Every blank i must match one of its allowed alternatives
           const ok = expected.every((alts, i) => {
             const u = norm(given[i] ?? "");
             return (alts || []).some((alt) => norm(alt) === u);
@@ -746,6 +820,7 @@ exports.submitAnswer = async (req, res) => {
         break;
       }
       case "poll": {
+        // Any non-empty choice is "valid" (no correctness notion)
         const has = String(answerText || "").trim().length > 0;
         if (has) {
           isCorrect = true;
@@ -757,6 +832,7 @@ exports.submitAnswer = async (req, res) => {
         break;
     }
 
+    // Store response (keeps both current and legacy fields for compatibility)
     const resp = await Response.create({
       session: sessionId,
       student: userId,
@@ -773,6 +849,7 @@ exports.submitAnswer = async (req, res) => {
       submittedAt: new Date(),
     });
 
+    // Per-submission broadcast (for live counts/visualizations)
     const io = req.app.get("io");
     if (io) {
       io.to(`session:${sessionId}`).emit("new_response", {
@@ -794,6 +871,7 @@ exports.submitAnswer = async (req, res) => {
       });
     }
 
+// Update aggregate distribution for MCQ charts
     try {
       const io = req.app.get("io");
       if (!io) throw new Error("io missing");
@@ -802,10 +880,13 @@ exports.submitAnswer = async (req, res) => {
         q?._id || `${String(s.quiz._id)}:${Number(questionIndex)}`
       );
 
+      // Model layer aggregation (id -> count)
       const rows = await Response.getAnswerDistribution(
         sessionId,
         questionIndex
       );
+
+      // Build a distribution keyed by both optionId and answerText for convenience
       const distribution = {};
       const answers = Array.isArray(q.answers) ? q.answers : [];
 
@@ -846,13 +927,17 @@ exports.submitAnswer = async (req, res) => {
   }
 };
 
+//GET /api/sessions/:sessionId/results
+// Return per-question stats + leaderboard for a session
+
 exports.getSessionResults = async (req, res) => {
-  // (unchanged)
+
   try {
     const { sessionId } = req.params;
     const s = await QuizSession.findById(sessionId).populate("quiz");
     if (!s) return res.status(404).json({ message: "Session not found" });
 
+    // Aggregate per-question stats
     const responseStats = await Response.aggregate([
       { $match: { session: new mongoose.Types.ObjectId(sessionId) } },
       {
@@ -867,6 +952,7 @@ exports.getSessionResults = async (req, res) => {
       { $sort: { _id: 1 } },
     ]);
 
+    // Leaderboard: points and accuracy per student
     const leaderboard = await Response.aggregate([
       { $match: { session: new mongoose.Types.ObjectId(sessionId) } },
       {
@@ -915,8 +1001,10 @@ exports.getSessionResults = async (req, res) => {
   }
 };
 
+// POST /api/sessions/:sessionId/end
+// End the session and broadcast completion
+
 exports.endSession = async (req, res) => {
-  // (unchanged)
   try {
     const { sessionId } = req.params;
     const userId = getUserId(req);
@@ -943,8 +1031,10 @@ exports.endSession = async (req, res) => {
   }
 };
 
+//GET /api/sessions/code/:code
+// Resolve a join code into a waiting/active session
+
 exports.getByCode = async (req, res) => {
-  // (unchanged)
   try {
     const { code } = req.params;
     if (!code || !code.trim()) {
@@ -978,8 +1068,9 @@ exports.getByCode = async (req, res) => {
   }
 };
 
+//GET /api/sessions/:id/participants
+// Return the in-memory participant list (from socketService)
 exports.participants = async (req, res) => {
-  // (unchanged)
   try {
     const { id } = req.params;
     const list = getParticipantsForSession(String(id));
@@ -989,10 +1080,9 @@ exports.participants = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-/**
- * GET /api/quizzes/:quizId/my-review
- * Returns per-question review for the logged-in student across any sessions of this quiz.
- */
+
+// GET /api/quizzes/:quizId/my-review
+// Returns per-question review for the logged-in student across any sessions of this quiz.
 exports.getMyQuizReview = async (req, res) => {
   try {
     const { quizId } = req.params;
@@ -1008,6 +1098,7 @@ exports.getMyQuizReview = async (req, res) => {
       .select("_id")
       .lean();
     const sids = sessions.map((s) => s._id);
+    // If no sessions exist, return empty review skeleton with expected blanks
     if (!sids.length) {
       return res.json({
         quiz: { _id: quiz._id, title: quiz.title },

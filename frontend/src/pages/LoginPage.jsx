@@ -5,15 +5,19 @@ import Button from "../components/Button.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function LoginPage() {
+  // Local form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login } = useAuth();
-  const nav = useNavigate();
-  const location = useLocation();
+  const { login } = useAuth(); // auth action from context
+  const nav = useNavigate(); // programmatic navigation
+  const location = useLocation(); // used to redirect back after login
 
+  // If we were redirected to login, go back to the original route after success.
+  // Fallback to '/courses' if none.
   const from = (location.state && location.state.from && location.state.from.pathname) || "/courses";
 
+  // Handle form submit: attempt login, then navigate to 'from'.
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");

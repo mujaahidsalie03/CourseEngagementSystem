@@ -195,7 +195,7 @@ export default function LecturerSessionPage() {
       }
     });
 
-    // 🔴 LIVE answer distribution updates
+    // LIVE answer distribution updates
     const onAnswersUpdate = ({ questionId, questionIndex, distribution }) => {
       setSnap(prev => {
         const prevAns = prev?.answers || {};
@@ -310,7 +310,7 @@ export default function LecturerSessionPage() {
     return getPrompt(currentQuestion);
   }, [currentQuestion]);
 
-  /* === timer reaction to **question changes** (prefer server timing) === */
+  //imer reaction to **question changes** (prefer server timing) 
   useEffect(() => {
     autoAdvanceFired.current = false;
 
@@ -381,7 +381,7 @@ export default function LecturerSessionPage() {
     }
   };
 
-  /* === data for charts === */
+  // data for charts 
   const qId = qIdOf(currentQuestion, quiz);
   const idxKey = (snap?.currentIndex != null) ? `idx:${snap.currentIndex}` : null;
 
@@ -396,7 +396,7 @@ export default function LecturerSessionPage() {
     optionLabels.map((label, i) => {
       const ans = (currentQuestion?.answers || [])[i] || {};
       const id = String(ans?._id ?? "");
-      // ✅ Stable across shuffles; label as safe fallback
+      // Stable across shuffles; label as safe fallback
       const tryKeys = [id, label];
       let val = 0;
       for (const k of tryKeys) {

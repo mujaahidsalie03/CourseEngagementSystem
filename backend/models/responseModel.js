@@ -1,6 +1,14 @@
 // models/responseModel.js
+//Response model:
+// One document per student's answer to a specific question in a specific session.
+// Supports multiple question types by storing a flexible `selectedAnswer`.
+// Maintains legacy fields for smooth migrations/old indexes.
+
 const mongoose = require("mongoose");
 
+ //Use these for all new reads/writes. Each response belongs to:
+   //    - a session (QuizSession)
+     //  - a student (User)
 const responseSchema = new mongoose.Schema(
   {
     // --- Current canonical references ---
@@ -15,7 +23,9 @@ const responseSchema = new mongoose.Schema(
       required: true,
     },
 
-    // --- Legacy field names (kept for existing unique index compatibility) ---
+    // --- Legacy field names (kept for existing unique index compatibility) 
+   // Some older code/indexes used quizSessionId/studentId; keep them in sync
+     //  in the pre-validate hook so old queries/indexes still work.
     quizSessionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "QuizSession",
@@ -28,6 +38,7 @@ const responseSchema = new mongoose.Schema(
     },
 
     // Question details
+     // Zero-based index of the question within the quiz.
     questionIndex: {
       type: Number,
       required: true,
@@ -36,6 +47,10 @@ const responseSchema = new mongoose.Schema(
 
     // Answer data - flexible to support different question types
     // For FIB we may store an array; for MCQ/Poll/Text we store a string
+    //Flexible shape to cover all types:
+      // - MCQ/Poll/Text: string
+       // FIB: array of strings (or pipe-separated string)
+        //(room for future types)
     selectedAnswer: {
       type: mongoose.Schema.Types.Mixed, // string | array | object
       required: true,
@@ -112,15 +127,17 @@ const responseSchema = new mongoose.Schema(
   }
 );
 
-/* ---------------------------- Indexes ---------------------------- */
+// indexes
+//Primary uniqueness: a student can submit at most once per question per session.
+  // Additional helpers for common query patterns and legacy compatibility.
 // Canonical unique key:
 responseSchema.index(
   { session: 1, student: 1, questionIndex: 1 },
   { unique: true }
 );
-responseSchema.index({ session: 1, questionIndex: 1 });
-responseSchema.index({ student: 1, submittedAt: -1 });
-responseSchema.index({ session: 1, isCorrect: 1 });
+responseSchema.index({ session: 1, questionIndex: 1 }); // aggregate per-question
+responseSchema.index({ student: 1, submittedAt: -1 }); // recent activity
+responseSchema.index({ session: 1, isCorrect: 1 }); //correctness summaries
 
 // Legacy unique key (sparse to avoid null collisions)
 responseSchema.index(
@@ -128,7 +145,7 @@ responseSchema.index(
   { unique: true, sparse: true }
 );
 
-/* ---------------------------- Virtuals ---------------------------- */
+// virtuals
 responseSchema.virtual("accuracyPercentage").get(function () {
   return this.maxPointsPossible > 0
     ? (this.pointsEarned / this.maxPointsPossible) * 100
@@ -143,7 +160,9 @@ responseSchema.virtual("responseTime").get(function () {
   return `${minutes}m ${remainingSeconds}s`;
 });
 
-/* -------------------------- Helpers --------------------------- */
+//helpers
+//Template parsers for {alt1|alt2} and {{alt1|alt2}} syntaxes.
+  // (Duplicated intentionally to keep the model self-contained.
 // Parse single-brace "{foo|bar}" templates
 function parseBracedTemplate(tpl = "") {
   const re = /\{([^}]+)\}/g;
@@ -173,7 +192,10 @@ function parseDoubleBracedTemplate(tpl = "") {
   return out;
 }
 
-/* -------------------------- Middleware --------------------------- */
+//middleware
+//Backfill legacy fields to keep old unique index valid.
+  // Keep selectedAnswerText synced when selectedAnswer is a string.
+   // Initialize attemptNumber on first write.
 // Ensure legacy fields are filled from canonical ones so the legacy index always has values
 responseSchema.pre("validate", function (next) {
   if (!this.quizSessionId && this.session) this.quizSessionId = this.session;
@@ -188,7 +210,10 @@ responseSchema.pre("validate", function (next) {
   next();
 });
 
-/* --------------------------- Methods ----------------------------- */
+//methods
+//calculateScore(question):
+  // Grades this response given the question config.
+   // Updates pointsEarned, isCorrect, and maxPointsPossible in-place.
 responseSchema.methods.calculateScore = function (question) {
   let pointsEarned = 0;
   let isCorrect = false;
@@ -197,6 +222,7 @@ responseSchema.methods.calculateScore = function (question) {
 
   switch (type) {
     case "mcq": {
+      // Single-correct MCQ: compare answer text
       const correctAnswer = (question.answers || []).find((a) => a.isCorrect);
       if (correctAnswer && this.selectedAnswer === correctAnswer.answerText) {
         isCorrect = true;
@@ -274,6 +300,7 @@ responseSchema.methods.calculateScore = function (question) {
           .filter(Boolean);
       });
 
+      // Normalize given answers into an array
       const given = Array.isArray(this.selectedAnswer)
         ? this.selectedAnswer
         : String(this.selectedAnswer || "")
@@ -290,6 +317,7 @@ responseSchema.methods.calculateScore = function (question) {
           return caseSensitive ? v : v.toLowerCase();
         };
 
+        // All blanks must match one of their allowed alternatives
         let allMatch = true;
         for (let i = 0; i < expected.length; i++) {
           const u = norm(given[i] ?? "");
@@ -311,6 +339,7 @@ responseSchema.methods.calculateScore = function (question) {
       break;
   }
 
+  // Persist computed fields on the document
   this.pointsEarned = pointsEarned;
   this.isCorrect = isCorrect;
   this.maxPointsPossible = question.points;
@@ -318,6 +347,7 @@ responseSchema.methods.calculateScore = function (question) {
   return this;
 };
 
+// Attach feedback (e.g., after grading pass or quiz end)
 responseSchema.methods.addFeedback = function (correctAnswer, explanation) {
   this.feedback = {
     correctAnswer,
@@ -327,7 +357,7 @@ responseSchema.methods.addFeedback = function (correctAnswer, explanation) {
   return this.save();
 };
 
-/* ---------------------------- Statics ---------------------------- */
+//statistics
 responseSchema.statics.getSessionStats = function (sessionId) {
   return this.aggregate([
     { $match: { session: new mongoose.Types.ObjectId(sessionId) } },
@@ -420,6 +450,7 @@ responseSchema.statics.getLeaderboard = function (sessionId, limit = 10) {
   ]);
 };
 
+// Distribution for MCQ/Poll charts; keys are the raw selectedAnswer values.
 responseSchema.statics.getAnswerDistribution = function (
   sessionId,
   questionIndex
@@ -442,6 +473,7 @@ responseSchema.statics.getAnswerDistribution = function (
   ]);
 };
 
+// Word cloud: tokenize by spaces, downcase, remove stopwords, and count.
 responseSchema.statics.getWordCloudData = function (sessionId, questionIndex) {
   return this.aggregate([
     {

@@ -25,12 +25,12 @@ function currentUser() {
   return u || {};
 }
 
-/**
- * GET the courses the logged-in student is enrolled in.
- * Backend route: /api/students/me/courses
- * NOTE: We still pass x-user-id/x-user-role explicitly so this works
- * even if http() doesn't find a user in localStorage.
- */
+
+// GET the courses the logged-in student is enrolled in.
+// Backend route: /api/students/me/courses
+// pass x-user-id/x-user-role explicitly so this works
+// even if http() doesn't find a user in localStorage.
+ 
 export async function getMyCourses() {
   const me = currentUser();
   const uid = me.id || me._id || me.userId || "";

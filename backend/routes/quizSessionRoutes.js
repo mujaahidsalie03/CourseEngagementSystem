@@ -30,7 +30,7 @@ router.post('/:sessionId/answer', auth, c.submitAnswer);
 // RESULTS
 router.get('/:sessionId/results', auth, c.getSessionResults);
 
-// GET session details (last)
+// GET session details (lastss)
 router.get('/:sessionId', auth, c.getSession);
 
 

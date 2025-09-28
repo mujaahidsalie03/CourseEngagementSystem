@@ -3,13 +3,13 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 
 const quizController = require('../controllers/quizController');
-// ⬇️ Add this import
+
 const quizSessionController = require('../controllers/quizSessionController');
 
 // Get all quizzes for a specific course
 router.get('/course/:courseId', auth, quizController.byCourse);
 
-// ⚠️ Put this BEFORE '/:id' so it doesn't get shadowed
+// Put this BEFORE '/:id' so it doesn't get shadowed
 router.get('/:quizId/my-review', auth, quizSessionController.getMyQuizReview);
 
 // Get quiz for live session (removes answers for students)

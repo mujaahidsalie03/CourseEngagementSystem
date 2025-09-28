@@ -4,7 +4,7 @@ import Header from "../components/Header.jsx";
 import Card from "../components/Card.jsx";
 import Spinner from "../components/Spinner.jsx";
 
-import { getSession, getParticipants } from "../api/appAPI";
+import { getSession, getParticipants } from "../api/appApi";
 import { connectSession, getSocket } from "../realtime/sessionClient";
 import { useAuth } from "../auth/AuthContext.jsx";
 
@@ -55,7 +55,7 @@ export default function StudentWaitingRoomPage() {
       });
     }
     return () => {
-      // optionally notify leave; safe if your backend supports it
+      // optionally notify leave; backend support
       socket.emit("leaveSessionRoom", { sessionId });
     };
   }, [sessionId, user]);
@@ -80,7 +80,7 @@ export default function StudentWaitingRoomPage() {
         }, 120);
       }
 
-      // Lightweight presence refresh if your backend sends these
+      // Lightweight presence refresh if backend sends these
       if (evt?.type === "participant_joined" || evt?.type === "participant_left") {
         // We can re-fetch participants if you want real-time list updates:
         // (Uncomment if you need it and your API is cheap)

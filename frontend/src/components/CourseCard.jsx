@@ -1,6 +1,12 @@
 import React from "react";
 
 // CourseCard.jsx
+// Clickable, keyboard-accessible course card with a gradient background.
+// Props:
+// - course: { courseName, courseCode, ... }
+// - visual: { a, b, emoji } where a/b are CSS colors used in the gradient
+// - lecturerName: display name for the lecturer
+// - onOpen: handler to open/navigate to the course
 export default function CourseCard({ course, visual, lecturerName, onOpen }) {
   const { a, b, emoji } = visual;
 

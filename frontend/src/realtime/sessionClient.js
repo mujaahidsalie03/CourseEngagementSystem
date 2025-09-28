@@ -12,17 +12,17 @@ export function getSocket() {
   return socket;
 }
 
-/**
- * connectSession(sessionId, onEvent)
- * Forwards server events verbatim and also emits a synthesized `patch`
- * so existing screens that rely on patch-merging keep working.
- *
- * onEvent({ type, data })
- *   types we forward: 'snapshot','quiz_started','next_question',
- *                     'quiz_paused','quiz_resumed','quiz_ended',
- *                     'answers_update','new_response',
- *                     'participant_joined','participant_left','patch'
- */
+
+// connectSession(sessionId, onEvent)
+// Forwards server events verbatim and also emits a synthesized `patch`
+// so existing screens that rely on patch-merging keep working.
+
+// onEvent({ type, data })
+//   types we forward: 'snapshot','quiz_started','next_question',
+//                     'quiz_paused','quiz_resumed','quiz_ended',
+//                     'answers_update','new_response',
+//                     'participant_joined','participant_left','patch'
+
 export function connectSession(sessionId, onEvent) {
   const s = getSocket();
 

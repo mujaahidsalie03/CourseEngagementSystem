@@ -1,4 +1,7 @@
 // models/quizSessionModel.js
+//QuizSession model:
+// Represents a single live session for a quiz (join code, status, timing).
+// Tracks participants, settings, derived stats, and lifecycle methods.
 const mongoose = require('mongoose');
 
 const participantSchema = new mongoose.Schema({
@@ -21,6 +24,9 @@ const participantSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+//A session belongs to a Quiz, has a short join code, status, timers, and
+  // an in-document list of participants for quick access in dashboards.
+
 const quizSessionSchema = new mongoose.Schema({
   // Core session data
   quiz: { 
@@ -28,14 +34,16 @@ const quizSessionSchema = new mongoose.Schema({
     ref: 'Quiz', 
     required: true 
   },
+  // Human-entered join code (uppercased + unique)
   sessionCode: { 
     type: String, 
     required: true, 
-    unique: true,
-    uppercase: true,
+    unique: true, // DB-level unique index
+    uppercase: true, // normalizes value before save
     minlength: 4,
     maxlength: 8
   },
+  // Session owner (lecturer)
   createdBy: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 

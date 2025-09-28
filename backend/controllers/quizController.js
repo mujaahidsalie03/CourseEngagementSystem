@@ -1,14 +1,19 @@
 // controllers/quizController.js
+// Quiz CRUD + student-facing quiz payloads + per-student status/score annotations.
+// Assumes an auth middleware attaches req.user with {_id, role} (used in some routes).
 const mongoose = require("mongoose");
 const Quiz = require("../models/quizModel");
 const Course = require("../models/courseModel");
 const QuizSession = require("../models/quizSessionModel");
 const Response = require("../models/responseModel");
 
-/* --------------------------------- Helpers -------------------------------- */
-
+// helpers
 // Parse blanks from single-brace templates:  "A {stack|STACK}"
 // -> returns [["stack","STACK"], ...]
+
+// Each {...} group yields an array of acceptable answers, split by '|'.
+// Trims whitespace around options.
+// Does not enforce case handling here; caseSensitive is respected at grading time.
 const extractBlanks = (template = "") =>
   (template.match(/\{([^}]+)\}/g) || []).map((m) =>
     m
@@ -17,6 +22,11 @@ const extractBlanks = (template = "") =>
       .map((s) => s.trim())
       .filter(Boolean)
   );
+
+//Normalize raw question input into a consistent internal shape.
+// Provides defaults (points, timeLimit, etc.).
+// Ensures properties exist for each supported question type.
+// Does not perform validation here (that happens in validateQuestion).
 
 const preprocess = (q = {}) => {
   const t = q.questionType;
@@ -47,6 +57,7 @@ const preprocess = (q = {}) => {
   }
 
   if (t === "fill_in_the_blank") {
+    // If blanks provided, use them; otherwise derive from template.
     base.template = String(q.template || "");
     base.blanks =
       Array.isArray(q.blanks) && q.blanks.length
@@ -58,6 +69,10 @@ const preprocess = (q = {}) => {
 
   return base;
 };
+
+// Validate a preprocessed question object.
+// Returns an array of error messages; empty array means valid.
+// Assumes q was produced by preprocess().
 
 const validateQuestion = (q) => {
   const errors = [];
@@ -81,6 +96,7 @@ const validateQuestion = (q) => {
   }
 
   if (t === "fill_in_the_blank") {
+    // If blanks not provided, derive them at the time for validation.
     const blanks = q.blanks.length ? q.blanks : extractBlanks(q.template);
     if (!q.template) errors.push("Template is required");
     if (!blanks.length) errors.push("No blanks detected");
@@ -88,6 +104,9 @@ const validateQuestion = (q) => {
 
   return errors;
 };
+
+ //Strip a preprocessed/validated question down to the minimal stored shape.
+ //(Avoids storing derived/transient fields; keeps only what's needed.)
 
 const normaliseQuestion = (q) => {
   const t = q.questionType;
@@ -124,8 +143,12 @@ const normaliseQuestion = (q) => {
   return out;
 };
 
-/* --------------------------------- Routes --------------------------------- */
-
+//Routes
+// create a new quiz for a course
+//Authenticated (assumes req.user exists; not enforcing role here)
+//{ courseId, title, questions = [], settings = {} }
+// Validates each question; returns 400 with per-question errors if invalid.
+ // Stores normalized question objects.
 // POST /api/quizzes
 exports.createQuiz = async (req, res) => {
   try {
@@ -137,11 +160,14 @@ exports.createQuiz = async (req, res) => {
         .json({ message: "courseId and title are required." });
     }
 
+     // Ensure course exists (also acts as a basic authorization boundary)
     const course = await Course.findById(courseId).lean();
     if (!course) return res.status(404).json({ message: "Course not found" });
 
+    //put the question in a uniform shape
     const prepared = questions.map(preprocess);
 
+    // Validate each question; collect readable errors with index
     const errors = prepared
       .map((q, i) => {
         const e = validateQuestion(q);
@@ -153,11 +179,13 @@ exports.createQuiz = async (req, res) => {
       return res.status(400).json({ message: "Validation errors", errors });
     }
 
+    //persist the quiz
     const quiz = await Quiz.create({
       title: title.trim(),
       courseId,
       questions: prepared.map(normaliseQuestion),
       settings: {
+        // sensible defaults; can be overridden 
         showResultsAfterEach: settings.showResultsAfterEach ?? true,
         allowLateJoin: settings.allowLateJoin ?? true,
         shuffleQuestions: !!settings.shuffleQuestions,
@@ -173,21 +201,22 @@ exports.createQuiz = async (req, res) => {
   }
 };
 
-/**
- * GET /api/quizzes/course/:courseId
- * Returns quizzes for a course and annotates, per logged-in student:
- *  - myStatus: 'completed' | 'not_completed'
- *  - myScore : sum of pointsEarned across that student's responses
- */
+//
+// GET /api/quizzes/course/:courseId
+// Returns quizzes for a course and annotates, per logged-in student:
+// myStatus: 'completed' | 'not_completed' (based on any response)
+// myScore : sum of pointsEarned across that student's responses
+// works without req.user but then returns base list
 exports.byCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
 
-    // Base list
+    // Base list (minimal quiz info)
     const quizzes = await Quiz.find({ courseId })
       .select("title createdAt updatedAt isDraft questions settings")
       .lean();
 
+      //if we don't know which user it is, return the base list (mainly for lecturer)
     const quizIds = [];
     const base = quizzes.map((q) => {
       quizIds.push(q._id);
@@ -200,9 +229,9 @@ exports.byCourse = async (req, res) => {
     // No user? return base list (keeps compatibility with lecturer use)
     const userId =
       req.user?._id ||
-      req.header("x-user-id") ||
-      req.query.userId ||
-      req.body?.userId;
+      req.header("x-user-id") || //fallback for dev header
+      req.query.userId || //fallback query parameters
+      req.body?.userId; //fallback body field
 
     if (!userId || quizIds.length === 0) {
       return res.json(base);
@@ -210,17 +239,19 @@ exports.byCourse = async (req, res) => {
 
     const uid = new mongoose.Types.ObjectId(String(userId));
 
-    // Sessions that used any of these quizzes
+    // Sessions that used any of these quizzes (find all)
     const sessions = await QuizSession.find({ quiz: { $in: quizIds } })
       .select("_id quiz")
       .lean();
 
     if (!sessions.length) {
+      //no sessions (cannot have any responses)
       return res.json(
         base.map((q) => ({ ...q, myStatus: "not_completed", myScore: null }))
       );
     }
 
+     // Group session ids by quiz id for later lookups
     const sessionsByQuiz = sessions.reduce((acc, s) => {
       const key = String(s.quiz);
       (acc[key] ||= []).push(s._id);
@@ -245,10 +276,12 @@ exports.byCourse = async (req, res) => {
       },
     ]);
 
+    // Map sessionId -> points
     const pointsBySession = Object.fromEntries(
       scored.map((r) => [String(r._id), r.points || 0])
     );
 
+    // For each quiz, mark status/score if the user has any response in any session
     const out = base.map((q) => {
       const sessIds = sessionsByQuiz[String(q._id)] || [];
       if (!sessIds.length)
@@ -273,6 +306,8 @@ exports.byCourse = async (req, res) => {
 };
 
 // GET /api/quizzes/:id
+// Fetch a quiz by id (full doc). Populates courseId's name (if model has it).
+// access  Authenticated
 exports.byId = async (req, res) => {
   try {
     const quiz = await Quiz.findById(req.params.id)
@@ -287,6 +322,11 @@ exports.byId = async (req, res) => {
 };
 
 // PUT /api/quizzes/:id
+// Update quiz title/questions/settings
+// access  Authenticated (no role enforcement here)
+// If questions provided, they’re fully revalidated and normalized before save.
+// Settings are shallow-merged into existing quiz.settings.
+
 exports.updateQuiz = async (req, res) => {
   try {
     const { id } = req.params;
@@ -295,6 +335,7 @@ exports.updateQuiz = async (req, res) => {
     const quiz = await Quiz.findById(id);
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
 
+     // Full question replace only if you send any
     if (questions.length) {
       const prepared = questions.map(preprocess);
 
@@ -314,6 +355,7 @@ exports.updateQuiz = async (req, res) => {
 
     if (title) quiz.title = title.trim();
     if (Object.keys(settings).length) {
+      // Merge new settings into existing
       quiz.settings = { ...quiz.settings, ...settings };
     }
 
@@ -326,6 +368,8 @@ exports.updateQuiz = async (req, res) => {
 };
 
 // DELETE /api/quizzes/:id
+// Delete a quiz by id
+// access  Authenticated (no role enforcement here)
 exports.deleteQuiz = async (req, res) => {
   try {
     const { id } = req.params;
@@ -338,12 +382,12 @@ exports.deleteQuiz = async (req, res) => {
   }
 };
 
-/**
- * GET /api/quizzes/:id/session
- * Student view: keep only what students need (but DO include
- * - template & blanks for fill-in-the-blank
- * - modelAnswer for pose & discuss (used behind a “Reveal key points” button)
- */
+
+// GET /api/quizzes/:id/session
+// Student view: keep only what students need (strips author only view) (but also includes
+// template & blanks for fill-in-the-blank
+// modelAnswer for pose & discuss (used behind a “Reveal key points” button)
+
 exports.getQuizForSession = async (req, res) => {
   try {
     const { id } = req.params;
@@ -352,6 +396,7 @@ exports.getQuizForSession = async (req, res) => {
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
 
     if (role === "student") {
+      // Build a minimal, student-safe version of each question
       const cleaned = {
         ...quiz,
         questions: (quiz.questions || []).map((question, index) => {
@@ -360,17 +405,18 @@ exports.getQuizForSession = async (req, res) => {
             questionType: question.questionType,
             points: question.points,
             timeLimit: question.timeLimit,
-            index,
+            index, // preserve index for client
           };
-
+// Include image if present
           if (question.image) {
             studentQuestion.image = question.image;
             studentQuestion.imageAlt = question.imageAlt || "";
           }
-
+// Copy only student-facing fields per type
           switch (question.questionType) {
             case "mcq":
             case "poll":
+              // Only answerText; no isCorrect flags
               studentQuestion.answers = (question.answers || []).map((a) => ({
                 answerText: a.answerText,
               }));
@@ -390,6 +436,7 @@ exports.getQuizForSession = async (req, res) => {
               break;
 
             case "fill_in_the_blank":
+              // Include everything needed to render + grade on client/server.
               studentQuestion.template = question.template || "";
               studentQuestion.blanks =
                 (question.blanks && question.blanks.length
@@ -407,7 +454,7 @@ exports.getQuizForSession = async (req, res) => {
       };
       return res.json(cleaned);
     }
-
+ // Lecturer or unspecified role => return full quiz doc
     res.json(quiz);
   } catch (e) {
     console.error(e);

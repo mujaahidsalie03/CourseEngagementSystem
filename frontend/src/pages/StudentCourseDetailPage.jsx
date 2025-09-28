@@ -8,6 +8,8 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import { joinSessionByCode } from "../api/appApi";
 
 // instructor helper
+// Instructor name extractor across multiple backend shapes.
+// Returns first matching name-like field or "".
 function instructorOf(c) {
   if (!c) return "";
   if (c.lecturerId?.name) return c.lecturerId.name;
@@ -25,6 +27,7 @@ function instructorOf(c) {
   return "";
 }
 
+// Safe date formatter (returns "" for invalid dates)
 const fmtDate = (d) => {
   if (!d) return "";
   const dt = new Date(d);
@@ -32,6 +35,7 @@ const fmtDate = (d) => {
 };
 
 // total points helper
+// Compute total points from various possible quiz shapes.
 const totalPointsOf = (qz) => {
   if (typeof qz.totalPoints === "number") return qz.totalPoints;
   if (typeof qz.maxPoints === "number") return qz.maxPoints;
@@ -43,6 +47,8 @@ const totalPointsOf = (qz) => {
 };
 
 // recognize backend "myStatus"/"myScore" first, then heuristics
+// Determine if the current user completed a quiz, preferring explicit flags
+// and falling back to heuristics in older payloads.
 function completedForUser(q, me) {
   if (!q) return false;
   if (q.myStatus === "completed") return true;
@@ -59,16 +65,18 @@ function completedForUser(q, me) {
 }
 
 export default function StudentCourseDetailPage() {
-  const { courseId } = useParams();
-  const { state } = useLocation();
-  const { user: me } = useAuth();
+  const { courseId } = useParams(); //course id from URL
+  const { state } = useLocation(); // visual seed passed from list page
+  const { user: me } = useAuth(); // current user (student)
 
+  // Page state
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
   const [quizzes, setQuizzes] = useState([]);
   const [joinCode, setJoinCode] = useState("");
   const [tab, setTab] = useState("all"); // all | done | todo
 
+   // Fetch course + quizzes
   useEffect(() => {
     (async () => {
       try {
@@ -82,6 +90,7 @@ export default function StudentCourseDetailPage() {
     })();
   }, [courseId]);
 
+  // Visual theme for the course (stable across reloads using seed)
   const vis = useMemo(() => {
     if (state?.visual) return state.visual;
     return pickVisual(visualKeyFromCourse(course || { _id: courseId }));
@@ -89,12 +98,14 @@ export default function StudentCourseDetailPage() {
 
   const cssVars = { "--accent": vis.a, "--accent2": vis.b };
 
+  // Join a live session via code; redirects to waiting room on success.
   const onJoin = async (e) => {
     e.preventDefault();
     const code = joinCode.trim();
     if (!code) return;
     try {
       const join = await joinSessionByCode(code, courseId);
+      // Full page nav to the student waiting room
       window.location.assign(`/s/sessions/${join.sessionId}/waiting`);
     } catch (err) {
       alert("Invalid or inactive session code.");
@@ -102,10 +113,12 @@ export default function StudentCourseDetailPage() {
     }
   };
 
+  // Split quizzes into done/todo buckets for tab view
   const done = quizzes.filter((q) => completedForUser(q, me));
   const todo = quizzes.filter((q) => !completedForUser(q, me));
   const list = tab === "done" ? done : tab === "todo" ? todo : quizzes;
 
+  // Loading state
   if (loading) {
     return (
       <>
@@ -115,6 +128,7 @@ export default function StudentCourseDetailPage() {
     );
   }
 
+  // Not found state
   if (!course) {
     return (
       <>

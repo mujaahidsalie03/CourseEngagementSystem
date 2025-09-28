@@ -1,13 +1,13 @@
 import { useMemo } from "react";
 
-/**
- * Compact horizontal results with long-label support.
- *
- * props:
- *   labels: string[]                // option order
- *   counts: Record<label, number>   // keyed by label
- *   total: number
- */
+
+ //Compact horizontal results with long-label support.
+ 
+ // props:
+ //  labels: string[]                // option order
+ //  counts: Record<label, number>   // keyed by label
+ //  total: number
+ 
 export default function LiveBarChart({ labels = [], counts = {}, total = 0 }) {
   const rows = useMemo(() => {
     return labels.map((label, i) => {

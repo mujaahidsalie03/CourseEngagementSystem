@@ -1,9 +1,14 @@
 // repositories/quizRepository.js
+// repositories/quizRepository.js
+// Data-access layer for Quiz documents.
+// Centralizes common CRUD, search, and aggregation operations against the Quiz model.
 const Quiz = require('../models/quizModel');
 const mongoose = require('mongoose');
 
 class QuizRepository {
   
+   //Create a new quiz document.
+  //Relies on Mongoose schema validation (e.g., required fields, enums).
   // Create a new quiz
   async create(quizData) {
     try {
@@ -29,11 +34,14 @@ class QuizRepository {
   }
 
   // Find all quizzes for a course
+  //List all quizzes for a course.
+  // Supports filtering drafts, optionally excluding questions to keep payloads small,
+  // and basic sorting.
   async findByCourseId(courseId, options = {}) {
     try {
       const { 
         includeQuestions = false, 
-        onlyPublished = false, // show drafts too.
+        onlyPublished = false, // show drafts too,by default
         sortBy = 'createdAt',
         sortOrder = -1 
       } = options;
@@ -57,6 +65,7 @@ class QuizRepository {
   }
 
   // Update quiz
+ // Uses findByIdAndUpdate with validators to respect schema rules.
   async update(quizId, updateData) {
     try {
       const quiz = await Quiz.findByIdAndUpdate(
@@ -80,6 +89,11 @@ class QuizRepository {
   }
 
   // Get quiz statistics
+  //Compute high-level quiz statistics.
+  //questionCount: number of questions
+   // totalPoints: sum of question.points
+   //questionTypes: counts per questionType (DEV-NOTE below)
+  //avgTimeLimit: average question time limit
   async getQuizStats(quizId) {
     try {
       const pipeline = [
@@ -118,6 +132,8 @@ class QuizRepository {
   }
 
   // Search quizzes
+  // Full-text search quizzes (requires a text index on Quiz fields, e.g.,
+  // quizSchema.index({ title: 'text' })).
   async search(searchTerm, courseId = null, options = {}) {
     try {
       const { limit = 10, skip = 0 } = options;
@@ -142,6 +158,9 @@ class QuizRepository {
   }
 
   // Get quiz for live session (student view)
+  //Build a student-safe quiz view for live sessions.
+   // Lecturers get the full quiz (no stripping).
+   // Students get a minimal version with correctness/model answers removed.
   async getQuizForSession(quizId, userRole = 'student') {
     try {
       const quiz = await Quiz.findById(quizId).lean();

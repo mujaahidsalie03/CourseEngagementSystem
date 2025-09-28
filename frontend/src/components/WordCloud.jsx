@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
 
-/**
- * Minimal SVG word cloud (already in your project); kept lightweight.
- * props: data: [{ text, count }], height?: number
- */
+
+// Minimal SVG word cloud (already in your project); kept lightweight.
+// props: data: [{ text, count }], height?: number
+ 
 export default function WordCloud({ data = [], height = 360 }) {
   const ref = useRef(null);
 

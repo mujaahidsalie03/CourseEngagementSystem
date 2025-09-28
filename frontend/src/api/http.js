@@ -1,11 +1,4 @@
 // src/api/http.js
-// One place to define the API base.
-// You can set either:
-//   VITE_API_URL = "http://localhost:5000/api"  (full URL incl. /api)  ← easiest
-//   VITE_API_URL = "/api"                        (relative)
-//   VITE_API_BASE = "http://localhost:5000"      (host only; we’ll still work)
-// Default falls back to "/api".
-
 const RAW =
   (import.meta.env.VITE_API_URL ||
     import.meta.env.VITE_API_BASE ||
@@ -13,7 +6,7 @@ const RAW =
 
 function normalizeBase(u) {
   if (!u) return "/api";
-  // If they passed relative, make sure it starts with "/"
+  // If they passed relative, make sure it starts with "/."
   if (!/^https?:\/\//i.test(u)) {
     if (!u.startsWith("/")) u = "/" + u;
   }
@@ -110,7 +103,7 @@ export async function http(
   return ct.includes("application/json") ? res.json() : res.text();
 }
 
-// Optional: export the resolved API base (handy for debugging)
+//export the resolved API base ( for debugging)
 export const apiBase = BASE;
 
 export function setSessionUser(user) {

@@ -3,20 +3,22 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function Header({ title = "Course Engagement System" }) {
-  const { pathname } = useLocation();
-  const { user, logout } = useAuth();
-  const nav = useNavigate();
+  const { pathname } = useLocation();  // current route for active link styling
+  const { user, logout } = useAuth(); // auth state + logout action
+  const nav = useNavigate();  // programmatic navigation
 
+  // Students see /s/courses, staff see /courses
   const baseCoursesPath = user?.role === "student" ? "/s/courses" : "/courses";
+  // Simple prefix check for "active" class
   const isActive = (p) => pathname.startsWith(p);
-  const canSeeAnalytics = user && user.role !== "student"; // <- only staff see Analytics
+  const canSeeAnalytics = user && user.role !== "student"; // only staff see Analytics
 
   const handleLogout = async () => {
     await logout();
     nav("/login", { replace: true });
   };
 
-  // Optional: while logged out, show just the brand (no nav)
+  // while logged out, show just the brand (no nav)
   if (!user) {
     return (
       <header className="topbar">

@@ -1,15 +1,25 @@
 // controllers/authController.js
+// Basic auth controller
+// NB: passwordHash is not actually hashed, just kept for naming convention, removed bcrypt hashing
 const User = require('../models/userModel');
 
+
+// Register a new user 
+// POST /api/auth/register
+// access  Public
 exports.register = async (req, res) => {
   try {
+    // Destructure expected fields from request body.
+    // Default role to 'student' if not provided.
     const { name, email, password, role = 'student' } = req.body;
     
+    //just a quick validation check of input
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'name, email, password required' });
     }
 
-    // Check if user already exists
+    // Check if user already exists with that email
+    //lean() because just need to fetch plain object, mongo features not really needed here
     const exists = await User.findOne({ email }).lean();
     if (exists) {
       return res.status(400).json({ message: 'Email already in use' });
@@ -23,7 +33,7 @@ exports.register = async (req, res) => {
       role 
     });
 
-    // Return user data without token
+    // Respond with minimal user info (no token returned).
     res.status(201).json({ 
       user: { 
         id: user._id, 
@@ -40,15 +50,19 @@ exports.register = async (req, res) => {
   }
 };
 
+//Login user 
+// route   POST /api/auth/login
+// access  Public
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
     
+    //quick validation (minimal)
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password required' });
     }
 
-    // Find user
+    // Find user by their email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -59,7 +73,7 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Return user data without token
+    // Return user data without token (successful login)
     res.json({ 
       user: { 
         id: user._id, 

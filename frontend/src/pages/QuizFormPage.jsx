@@ -16,7 +16,7 @@ const TYPE_OPTIONS = [
   { value: "fill_blank", label: "Fill in the Blank" },
 ];
 
-// ---------- utilities ----------
+// utilitiesee
 function parseBlanks(template) {
   const re = /\{([^}]+)\}/g;
   const blanks = [];
@@ -34,7 +34,6 @@ function defaultSettings(type) {
     timeLimit: 60,
     shuffleOptions: type === "mcq" || type === "poll",
     allowMultiple: type === "mcq" ? false : undefined,
-    // removed: anonymity, moderation, maxWords, requireJustification, wordLimit
     caseSensitive: type === "fill_blank" ? false : undefined,
     trimWhitespace: type === "fill_blank" ? true : undefined,
   };
@@ -105,11 +104,11 @@ function validateQuizPayloadClient(payload) {
   return errors;
 }
 
-// server <-> client type mapping for fill-in-the-blank
+// server b2b client type mapping for fill-in-the-blank
 const toServerType = (t) => (t === "fill_blank" ? "fill_in_the_blank" : t);
 const toClientType = (t) => (t === "fill_in_the_blank" ? "fill_blank" : t);
 
-// ---------- editors ----------
+// editors
 function AnswerEditor({ answers, setAnswers, showCorrect }) {
   const update = (id, patch) =>
     setAnswers(answers.map((a) => (a.id === id ? { ...a, ...patch } : a)));
@@ -212,12 +211,6 @@ function Settings({ q, onChange }) {
           </div>
         )}
 
-        {/* Removed:
-            - Anonymous responses (all types)
-            - Word Cloud: Max words per response, Hold for moderation
-            - Pose & Discuss: Word limit, Require justification
-        */}
-
         {q.type === "fill_blank" && (
           <>
             <div className="field no-label">
@@ -249,7 +242,7 @@ function Settings({ q, onChange }) {
   );
 }
 
-// ---------- main page ----------
+// main page
 export default function QuizFormPage({ mode }) {
   const { courseId, quizId } = useParams();
   const nav = useNavigate();
@@ -258,7 +251,7 @@ export default function QuizFormPage({ mode }) {
   const [questions, setQuestions] = useState([]);
   const [saving, setSaving] = useState(false);
 
-  // map server question -> client question
+  // map server question to client question
   const toClientQuestion = (srv) => {
     const type = toClientType(srv.questionType || "mcq");
     const base = {
@@ -285,11 +278,9 @@ export default function QuizFormPage({ mode }) {
     }
     if (type === "pose_and_discuss") {
       base.modelAnswer = srv.modelAnswer || "";
-      // removed: requireJustification / wordLimit mapping
     }
     if (type === "word_cloud") {
       base.maxSubmissions = srv.maxSubmissions ?? 1;
-      // removed: allowAnonymous / moderation / maxWords mapping
     }
     if (type === "fill_blank") {
       base.template = srv.template || "";
@@ -301,7 +292,7 @@ export default function QuizFormPage({ mode }) {
     return base;
   };
 
-  // map client question -> server question
+  // map client question to server question
   const toServerQuestion = (cli) => {
     const questionType = toServerType(cli.type);
     const base = {
@@ -322,11 +313,9 @@ export default function QuizFormPage({ mode }) {
     }
     if (cli.type === "pose_and_discuss") {
       base.modelAnswer = cli.modelAnswer || "";
-      // removed: requireJustification / wordLimit
     }
     if (cli.type === "word_cloud") {
       base.maxSubmissions = cli.maxSubmissions ?? 1;
-      // removed: allowAnonymous / moderation / maxWords
     }
     if (cli.type === "fill_blank") {
       base.template = cli.template || "";
