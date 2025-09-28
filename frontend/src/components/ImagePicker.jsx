@@ -2,16 +2,18 @@ import { useRef, useState } from "react";
 import { uploadImage } from "../api/appApi";
 
 export default function ImagePicker({ image, onChange }) {
-  const fileRef = useRef(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
+  const fileRef = useRef(null); // hidden <input type="file"> handle
+  const [busy, setBusy] = useState(false); // UI loading state during read/upload
+  const [err, setErr] = useState(""); // user-visible error message
 
+
+  // Handle a newly chosen File
   const onFile = async (file) => {
     if (!file) return;
     setBusy(true); setErr("");
     try {
       const meta = await uploadImage(file); // { url, width, height, name, size, type }
-      onChange(meta);
+      onChange(meta);   // bubble up to parent
     } catch (e) {
       setErr(e?.message || "Upload failed");
     } finally {

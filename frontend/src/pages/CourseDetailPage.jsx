@@ -8,17 +8,19 @@ import { pickVisual, visualKeyFromCourse } from "../utils/visual";
 import { createSession } from "../api/appApi";
 
 export default function CourseDetailPage() {
-  const { courseId } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
+  const { courseId } = useParams(); // course id from route
+  const navigate = useNavigate(); // programmatic navigation
+  const location = useLocation(); // read route state (for visuals)
+  const { user } = useAuth(); // current user (for role gating)
 
+  // Local state for data + UI
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
   const [quizzes, setQuizzes] = useState([]);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("alpha");
 
+  // Fetch course + quizzes when courseId changes.
   useEffect(() => {
     (async () => {
       try {
@@ -32,6 +34,7 @@ export default function CourseDetailPage() {
     })();
   }, [courseId]);
 
+  // Computed, filtered/sorted list (stable until deps change)
   const filtered = useMemo(() => {
     let list = quizzes;
     if (query.trim()) {
@@ -39,6 +42,7 @@ export default function CourseDetailPage() {
       list = list.filter((q) => (q.title || "").toLowerCase().includes(s));
     }
     if (sort === "alpha") {
+      // clone before sort to avoid mutating state
       list = [...list].sort((a, b) => (a.title || "").localeCompare(b.title || ""));
     } else {
       const count = (x) => x.questionCount ?? (x.questions?.length || 0);
@@ -47,6 +51,7 @@ export default function CourseDetailPage() {
     return list;
   }, [quizzes, query, sort]);
 
+  // Loading state: header + centered spinner card
   if (loading) {
     return (
       <>
@@ -56,6 +61,7 @@ export default function CourseDetailPage() {
     );
   }
 
+  // Not found state
   if (!course) {
     return (
       <>
@@ -65,14 +71,18 @@ export default function CourseDetailPage() {
     );
   }
 
+  // Visual theming for this page (seeded so color/emoji are stable on refresh)
   const routed = location.state?.visual;
   const seedKey = location.state?.seedKey ?? visualKeyFromCourse(course);
   const vis = routed ?? pickVisual(seedKey);
   const cssVars = { "--accent": vis.a, "--accent2": vis.b };
 
+  // Visual theming for this page (seeded so color/emoji are stable on refresh)
   async function handleStartSession(qz) {
     try {
+      // dev auth: backend reads userId from body/headers
       const created = await createSession({ quizId: qz._id, courseId: course._id, userId: user?._id });
+      // Carry visual + course bread crumb context to the session page
       navigate(`/sessions/${created.sessionId}`, {
         state: { visual: vis, course: { id: course._id, name: course.courseName } }
       });

@@ -1,7 +1,7 @@
 // src/components/QuestionPlayer.jsx
 import { useEffect, useMemo, useState } from "react";
 
-/* ---------- helpers ---------- */
+// helpers
 const qType = (q) =>
   String(q?.type || q?.questionType || "")
     .toLowerCase()
@@ -22,7 +22,7 @@ const getImage = (q) => q?.imageUrl || q?.image || null;
 const getRef = (q) => q?.reference ?? q?.referenceText ?? q?.hint ?? "";
 const getPrompt = (q) => q?.prompt ?? q?.questionText ?? q?.text ?? "Question";
 
-/* Parse single-brace blanks: "{a|b}" -> [["a","b"], ...] */
+// Parse single-brace blanks: "{a|b}" -> [["a","b"], ...] 
 const parseBlanks = (tpl = "") => {
   const re = /\{([^}]+)\}/g;
   const out = [];
@@ -34,7 +34,7 @@ const parseBlanks = (tpl = "") => {
   return out;
 };
 
-/* Tokenize a template into text and blank markers so we can render inline inputs */
+// Tokenize a template into text and blank markers so we can render inline inputs 
 function tokenizeTemplate(tpl = "") {
   if (!tpl) return [{ type: "text", text: "" }];
   const parts = [];
@@ -62,7 +62,7 @@ function tokenizeTemplate(tpl = "") {
   return parts;
 }
 
-/* Robust key-points normalizer for Pose & Discuss */
+// Robust key-points normalizer for Pose & Discuss 
 const splitBullets = (s) =>
   String(s)
     .split(/\r?\n|;|•/g)
@@ -109,7 +109,7 @@ const getKeyPoints = (q) => {
   return all.filter((t) => (seen.has(t) ? false : (seen.add(t), true)));
 };
 
-/* ========================================================= */
+//
 
 export default function QuestionPlayer({
   question,
@@ -138,7 +138,7 @@ const answers = useMemo(() => {
   const img = getImage(question);
   const refText = getRef(question);
 
-  // --- All hooks at top (avoid hook-order errors) ---
+  // All hooks at top (avoid hook-order errors) 
   const [local, setLocal] = useState(value ?? null); // generic bound value fallback
   const [showKP, setShowKP] = useState(false);       // pose & discuss: reveal toggle
 
@@ -163,7 +163,7 @@ const answers = useMemo(() => {
   );
   const tokens = useMemo(() => tokenizeTemplate(template), [template]);
 
-  /* ---------- shared media block ---------- */
+  //shared media block 
   const Media = () => {
     if (!img && !refText) return null;
     return (
@@ -181,7 +181,7 @@ const answers = useMemo(() => {
     );
   };
 
-  /* ---------- MCQ / POLL (card style) ---------- */
+  // MCQ / POLL (card style)
   if (type === "mcq" || type === "poll") {
     const allowMultiple = !!question?.settings?.allowMultiple && type === "poll";
     const ensureSet = (v) =>
@@ -230,7 +230,7 @@ const answers = useMemo(() => {
     );
   }
 
-  /* ---------- WORD CLOUD ---------- */
+  // word cloud
   if (type === "word_cloud") {
     return (
       <div>
@@ -252,7 +252,7 @@ const answers = useMemo(() => {
     );
   }
 
-  /* ---------- POSE & DISCUSS (Notes + Key Points reveal) ---------- */
+  // POSE & DISCUSS (Notes + Key Points reveal)
   if (type === "pose_and_discuss") {
     const keyPoints = getKeyPoints(question);
 
@@ -306,7 +306,7 @@ const answers = useMemo(() => {
     );
   }
 
-  /* ---------- FILL IN THE BLANK (inline blanks) ---------- */
+  // FILL IN THE BLANK (inline blanks)
   if (type === "fill_in_the_blank" || type === "fill_blank") {
     // Ensure an array the size of blanks for the user's answers
     const current = Array.isArray(mergedValue)
@@ -371,7 +371,7 @@ const answers = useMemo(() => {
     );
   }
 
-  /* ---------- fallback text ---------- */
+  // fallback text
   return (
     <div>
       <Media />
@@ -388,7 +388,7 @@ const answers = useMemo(() => {
   );
 }
 
-/* Inline style helper (blue theme + Pose&Discuss + FIB bubbles) */
+// Inline style helper (blue theme + Pose&Discuss + FIB bubbles) 
 function Styles() {
   return (
     <style>{`

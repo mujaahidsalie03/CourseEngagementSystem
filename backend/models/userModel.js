@@ -1,4 +1,6 @@
 // models/userModel.js
+//User model:
+// - Minimal profile + role + enrolled/owned courses.
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({

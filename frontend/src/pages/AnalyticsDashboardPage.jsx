@@ -12,11 +12,11 @@ import {
   getStudentCourseAnalytics,
 } from "../api/appApi.js";
 
-/* ---------- helpers ---------- */
+// helpers
 const clamp01 = (x) => Math.max(0, Math.min(1, Number(x || 0)));
 const pctTxt = (x) => `${Math.round(clamp01(x) * 100)}%`;
 
-/* ---------- tiny SVG widgets (kept dependency-free) ---------- */
+// tiny SVG widgets (kept dependency-free)
 function Donut({ value = 0, size = 120, label = "", stroke = 12, color = "var(--accent)" }) {
   const v = clamp01(value);
   const r = (size - stroke) / 2;
@@ -33,7 +33,7 @@ function Donut({ value = 0, size = 120, label = "", stroke = 12, color = "var(--
   );
 }
 
-// REPLACE the whole BucketBar component with this
+// bucketbar for analytics per quiz
 function BucketBar({ hist = [] }) {
   const max = Math.max(1, ...hist);
   return (
@@ -57,7 +57,7 @@ function BucketBar({ hist = [] }) {
   );
 }
 
-/* ---------- page ---------- */
+// page
 export default function AnalyticsDashboardPage() {
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [courses, setCourses] = useState([]);
@@ -65,8 +65,8 @@ export default function AnalyticsDashboardPage() {
 
   const [summary, setSummary] = useState(null);
   const [trend, setTrend] = useState([]);
-  const [quizDetails, setQuizDetails] = useState({});   // quizId -> quiz summary
-  const [studentDetails, setStudentDetails] = useState({}); // studentId -> student course summary
+  const [quizDetails, setQuizDetails] = useState({});   // quizId becomes quiz summary
+  const [studentDetails, setStudentDetails] = useState({}); // studentId becomes  student course summary
   const [userQuery, setUserQuery] = useState("");
 
   const toggleStudentDetails = async (studentId) => {

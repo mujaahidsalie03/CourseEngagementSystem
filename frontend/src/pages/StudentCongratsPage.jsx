@@ -1,3 +1,5 @@
+//when lecturer clicks end session gets redirected here.
+
 import { useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header.jsx";

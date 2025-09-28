@@ -12,7 +12,7 @@ router.get('/course/:courseId/quizzes', auth, ctrl.courseQuizzes);
 // Quiz-level analytics
 router.get('/quiz/:quizId/summary', auth, ctrl.quizSummary);
 
-// Student-level analytics (per user in a course)
+// Student-level analytics (per users in a course)
 router.get('/student/:studentId/course/:courseId/summary', auth, ctrl.studentCourseSummary);
 
 module.exports = router;

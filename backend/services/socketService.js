@@ -1,34 +1,42 @@
 // services/socketService.js
+// Socket.IO service for live quiz sessions.
+// - Manages room membership, authoritative per-question timing, and live updates
+// - Bridges student submissions to persistence (Response model)
+// - Emits distribution updates, scoreboards, and snapshots to keep clients in sync
 const mongoose = require("mongoose");
 const Response = require("../models/responseModel");
 const QuizSession = require("../models/quizSessionModel");
 const Quiz = require("../models/quizModel");
 
+// Build a stable question id: prefer question._id; otherwise fall back to "quizId:index"
 const keyFor = (quizId, idx, q) =>
   String(q?._id || `${String(quizId)}:${Number(idx)}`);
 
-/* ────────────────────────────────────────────
-   Authoritative timing per session (exported)
-   ──────────────────────────────────────────── */
-/**
- * TimingState = {
- *   questionStartedAt: number, // ms since epoch
- *   timeLimit: number,         // seconds
- *   pausedAt: number|null,     // ms when paused (null if active)
- *   pauseAccumMs: number       // total paused duration accumulated (ms)
- * }
- */
+
+//   Authoritative timing per session (exported)
+// TimingState = {
+// questionStartedAt: number, // ms since epoch
+//   timeLimit: number,         // seconds
+ //   pausedAt: number|null,     // ms when paused (null if active)
+ // pauseAccumMs: number       // total paused duration accumulated (ms)
+ // }
+
 const _sessionTiming = new Map(); // sessionId -> TimingState
+// Read the current timing state for a session
 const getTimingForSession = (sid) => _sessionTiming.get(String(sid)) || null;
+// Set or replace the timing state for a session
 const setTimingForSession = (sid, t) => _sessionTiming.set(String(sid), t);
 
-/** Compute derived timing fields for emits */
+// ompute derived timing fields for emits
 const snapTimingForSession = (sid, nowMs = Date.now()) => {
   const t = getTimingForSession(sid);
   if (!t) return { questionEndsAt: null, remainingSeconds: null };
+  // Accumulate paused time (if currently paused, include time since pausedAt)
   const pausedSoFar =
     t.pausedAt != null ? t.pauseAccumMs + (nowMs - t.pausedAt) : t.pauseAccumMs;
+    // End = start + limit + all paused durations
   const questionEndsAt = t.questionStartedAt + t.timeLimit * 1000 + pausedSoFar;
+   // Floor at 0 to avoid negative countdowns
   const remainingSeconds = Math.max(
     0,
     Math.round((questionEndsAt - nowMs) / 1000)
@@ -41,28 +49,32 @@ const snapTimingForSession = (sid, nowMs = Date.now()) => {
   };
 };
 
-/* ────────────────────────────────────────────
-   Presence
-   ──────────────────────────────────────────── */
+//Presence tracking (in-memory)
+  // Map<sessionId, Map<userId, {id,name}>>
+
 const presence = new Map();
 const roomMap = (sid) => {
   const k = String(sid);
   if (!presence.has(k)) presence.set(k, new Map());
   return presence.get(k);
 };
+
+//// Return a shallow list of participants for a session (used by controllers too)
 function getParticipantsForSession(sessionId) {
   const m = presence.get(String(sessionId));
   return m ? Array.from(m.values()) : [];
 }
 
-/* ────────────────────────────────────────────
-   Helpers (answer normalization for socket path)
-   ──────────────────────────────────────────── */
+
+ //  Helpers (answer normalization for socket path)
+  //Normalize incoming payloads into a canonical {answerText, blanksArray?}
+   //matching the HTTP controller semantics for parity.
 function normalizeIncomingAnswerForSocket(q, raw) {
   if (!q) return { answerText: "" };
 
   const t = String(q.questionType || "").toLowerCase();
 
+  // MCQ / Poll: accept text, {selectedText}, {selectedTexts[]}, {text}, or {optionIndex}
   if (t === "mcq" || t === "poll") {
     if (typeof raw === "string") return { answerText: raw.trim() };
     if (raw && typeof raw === "object") {
@@ -79,6 +91,7 @@ function normalizeIncomingAnswerForSocket(q, raw) {
     return { answerText: "" };
   }
 
+  // Word cloud / PAD / free text
   if (t === "word_cloud" || t === "pose_and_discuss" || t === "text") {
     if (typeof raw === "string") return { answerText: raw.trim() };
     if (raw && typeof raw === "object")
@@ -86,6 +99,7 @@ function normalizeIncomingAnswerForSocket(q, raw) {
     return { answerText: "" };
   }
 
+  // Fill-in-the-blank: normalize into array and pipe-joined string
   if (t === "fill_in_the_blank") {
     if (Array.isArray(raw)) {
       const arr = raw.map((s) => String(s ?? "").trim());
@@ -102,21 +116,21 @@ function normalizeIncomingAnswerForSocket(q, raw) {
         .filter(Boolean);
       return { answerText: arr.join(" | "), blanksArray: arr };
     }
+     // Fallback: coerce to trimmed string
     return { answerText: "", blanksArray: [] };
   }
 
   return { answerText: String(raw ?? "").trim() };
 }
 
-/* ────────────────────────────────────────────
-   Socket Service
-   ──────────────────────────────────────────── */
+ //  Socket Service
+//Binds all event handlers and translates them into DB/state changes + emits.
 class SocketService {
   constructor(io) {
     this.io = io;
     this.setupEventHandlers();
   }
-
+//Wire up all socket events on connection
   setupEventHandlers() {
     this.io.on("connection", (socket) => {
       console.log(`Socket connected: ${socket.id}`);
@@ -211,6 +225,7 @@ class SocketService {
         return;
       }
 
+       // Enforce allowed state transition (waiting -> active)
       await session.startSession();
 
       const quiz = await Quiz.findById(quizId);
@@ -219,12 +234,14 @@ class SocketService {
         return;
       }
 
+      // Build student-safe first question (no isCorrect flags)
       const firstQuestion = this.prepareQuestionForStudents(
         quiz.questions[0],
         0,
         quiz._id
       );
 
+      // Initialize authoritative timing state for Q0
       const startedAt = Date.now();
       setTimingForSession(sessionId, {
         questionStartedAt: startedAt,
@@ -236,6 +253,7 @@ class SocketService {
       const now = Date.now();
       const ts = snapTimingForSession(sessionId, now);
 
+      // Broadcast "quiz_started" with timer fields
       this.io.to(`session:${sessionId}`).emit("quiz_started", {
         question: firstQuestion,
         questionIndex: 0,
@@ -247,7 +265,7 @@ class SocketService {
         remainingSeconds: ts.remainingSeconds,
       });
 
-      // 🔄 Reset per-question visuals and counters on start
+      //Reset per-question visuals and counters on start
       const qId = String(quiz.questions[0]?._id || `${String(quiz._id)}:0`);
       this.io.to(`session:${sessionId}`).emit("answers_update", {
         questionId: qId,
@@ -267,6 +285,7 @@ class SocketService {
   }
 
   // --- Next question (socket path)
+   // Advance to a specific question index (socket-initiated)
   async handleNextQuestion(socket, data) {
     try {
       const { sessionId, questionIndex } = data;
@@ -277,8 +296,10 @@ class SocketService {
         return;
       }
 
+      // Will throw if invalid index or wrong state; also touches lastActivityAt
       await session.advanceToQuestion(questionIndex);
 
+      // If index is at/over the end, emit completion event
       if (questionIndex >= session.quiz.questions.length) {
         this.io.to(`session:${sessionId}`).emit("quiz_finished");
         return;
@@ -290,6 +311,7 @@ class SocketService {
         session.quiz._id
       );
 
+      // Reset timing for the new question
       const startedAt = Date.now();
       setTimingForSession(sessionId, {
         questionStartedAt: startedAt,
@@ -312,7 +334,7 @@ class SocketService {
         remainingSeconds: ts.remainingSeconds,
       });
 
-      // 🔄 Reset per-question visuals and counters when advancing
+      // Reset per-question visuals and counters when advancing
       const qId = String(
         session.quiz.questions[questionIndex]?._id ||
           `${String(session.quiz._id)}:${Number(questionIndex)}`
@@ -415,7 +437,7 @@ class SocketService {
         return;
       }
 
-      // 🔎 Normalize incoming answer for parity with HTTP path
+      // Normalize incoming answer for parity with HTTP path
       const { answerText, blanksArray } = normalizeIncomingAnswerForSocket(
         question,
         answer
@@ -483,7 +505,7 @@ class SocketService {
           // key is already the answer _id from the aggregation — set once
           distribution[key] = (distribution[key] || 0) + cnt;
 
-          // add a human-readable alias by label (DO NOT re-add the _id)
+          // add a human-readable alias by label ()
           const byId = answers.find((a) => String(a?._id) === key);
           if (byId) {
             const label = String(byId.answerText ?? "");
@@ -615,7 +637,7 @@ class SocketService {
 module.exports = SocketService;
 module.exports.getParticipantsForSession = getParticipantsForSession;
 
-// ⭐ Export timing helpers so controllers can use them too:
+// Export timing helpers so controllers can use them too:
 module.exports.getTimingForSession = getTimingForSession;
 module.exports.setTimingForSession = setTimingForSession;
 module.exports.snapTimingForSession = snapTimingForSession;

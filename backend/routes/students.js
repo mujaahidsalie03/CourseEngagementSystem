@@ -13,14 +13,14 @@ const toId = (v) => {
   }
 };
 
-/**
- * GET /api/students/me/courses
- * Returns all courses the current user is enrolled in (student side).
- * This endpoint is DEV-friendly:
- *  - Reads user from req.user (middleware/auth), headers, or query.
- *  - Does NOT block on role; it only needs a user id to look up enrolments.
- *  - Populates lecturer name (lecturerId.name) for the card UI.
- */
+//
+// GET /api/students/me/courses
+// Returns all courses the current user is enrolled in (student side).
+// This endpoint is DEV-friendly:
+// Reads user from req.user (middleware/auth), headers, or query.
+//  Does NOT block on role; it only needs a user id to look up enrolments.
+// Populates lecturer name (lecturerId.name) for the card UI.
+
 router.get('/me/courses', async (req, res) => {
   try {
     const userId =

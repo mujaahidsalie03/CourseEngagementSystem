@@ -1,3 +1,5 @@
+// Simple presentational Card component with optional title, subtitle, footer,
+// and an optional onClick to make the whole card clickable.
 export default function Card({ title, subtitle, children, footer, onClick }) {
   return (
     <div className="card" onClick={onClick} style={{cursor:onClick?"pointer":"default"}}>

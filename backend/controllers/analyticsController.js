@@ -43,17 +43,17 @@ function pct(n, d) {
   return n / d;
 }
 
-/**
- * GET /api/analytics/course/:courseId/summary
- * {
- *   sessionsHeld, activeStudents, avgParticipation, avgMark,
- *   topStudents: [{ studentId, name, avg, quizzesDone }],
- *   atRiskStudents: [...],
- *   perQuiz: [{ quizId, title, participants, questions:[{index, difficulty}] }],
- *   students: [{_id, name}],
- *   registeredCount
- * }
- */
+
+ // GET /api/analytics/course/:courseId/summary
+ //{
+ //  sessionsHeld, activeStudents, avgParticipation, avgMark,
+ //  topStudents: [{ studentId, name, avg, quizzesDone }],
+ //  atRiskStudents: [...],
+//  perQuiz: [{ quizId, title, participants, questions:[{index, difficulty}] }],
+//   students: [{_id, name}],
+//   registeredCount
+// }
+ 
 exports.courseSummary = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -341,11 +341,11 @@ exports.courseSummary = async (req, res) => {
   }
 };
 
-/**
- * GET /api/analytics/course/:courseId/trend
- * returns { trend: [{ sessionId, startedAt, participation, accuracy }] }
- * participation = responders / registeredCount
- */
+//
+// GET /api/analytics/course/:courseId/trend
+// returns { trend: [{ sessionId, startedAt, participation, accuracy }] }
+// participation = responders / registeredCount
+ 
 exports.courseTrend = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -416,10 +416,10 @@ exports.courseTrend = async (req, res) => {
   }
 };
 
-/**
- * GET /api/analytics/course/:courseId/quizzes
- * returns [{ quizId, title, questionCount, sessionCount }]
- */
+//
+// GET /api/analytics/course/:courseId/quizzes
+// returns [{ quizId, title, questionCount, sessionCount }]
+
 exports.courseQuizzes = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -451,14 +451,14 @@ exports.courseQuizzes = async (req, res) => {
   }
 };
 
-/**
- * GET /api/analytics/quiz/:quizId/summary
- * {
- *   participation, completion,
- *   scoreHistogram:[10],
- *   questions:[{index, difficulty}]
- * }
- */
+
+// GET /api/analytics/quiz/:quizId/summary
+ // {
+//  participation, completion,
+//   scoreHistogram:[10],
+//   questions:[{index, difficulty}]
+ // }
+
 exports.quizSummary = async (req, res) => {
   try {
     const { quizId } = req.params;
@@ -614,15 +614,15 @@ exports.quizSummary = async (req, res) => {
   }
 };
 
-/**
- * GET /api/analytics/student/:studentId/course/:courseId/summary
- * {
- *   student: {_id, name},
- *   totalQuizzes, doneCount,
- *   avgMark, participationRate,
- *   perQuiz: [{quizId, title, percent, correct, answered, total}]
- * }
- */
+
+// GET /api/analytics/student/:studentId/course/:courseId/summary
+// {
+//   student: {_id, name},
+//   totalQuizzes, doneCount,
+//   avgMark, participationRate,
+//   perQuiz: [{quizId, title, percent, correct, answered, total}]
+// }
+
 exports.studentCourseSummary = async (req, res) => {
   try {
     const { courseId, studentId } = req.params;

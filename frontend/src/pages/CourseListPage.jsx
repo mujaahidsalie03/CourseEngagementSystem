@@ -12,11 +12,13 @@ export default function CourseListPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // UI/data state
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState([]);
-  const [visualMap, setVisualMap] = useState({});
+  const [visualMap, setVisualMap] = useState({}); // stable color/emoji per course key
   const [query, setQuery] = useState("");
 
+  // Fetch the current user's courses (lecturer: mine; student: enrolled)
   useEffect(() => {
     (async () => {
       try {
@@ -29,6 +31,7 @@ export default function CourseListPage() {
   }, []);
 
   // Build a stable palette/emoji per course key
+  // Seed and cache visuals per course so colors/emoji don't flicker across renders.
   useEffect(() => {
     if (!courses?.length) return;
     setVisualMap((prev) => {
@@ -41,6 +44,7 @@ export default function CourseListPage() {
     });
   }, [courses]);
 
+  // Client-side filter by name/code, case-insensitive
   const filtered = useMemo(() => {
     if (!query.trim()) return courses;
     const s = query.toLowerCase();
@@ -51,6 +55,7 @@ export default function CourseListPage() {
     );
   }, [courses, query]);
 
+  // Loading placeholder
   if (loading) {
     return (
       <>

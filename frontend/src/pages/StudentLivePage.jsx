@@ -6,7 +6,7 @@ import QuestionPlayer from "../components/QuestionPlayer.jsx";
 import { connectSession } from "../realtime/sessionClient";
 import { getSession, getQuiz, submitAnswer } from "../api/appApi";
 
-/* ---------- helpers ---------- */
+//helpers 
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const fmt = (s) =>
   s == null
@@ -23,7 +23,7 @@ const qType = (q) =>
 
 const getPrompt = (q) => q?.prompt ?? q?.questionText ?? q?.text ?? "Question";
 
-/** Memoized timer pill so ticks don't re-render the question subtree */
+// Memoized timer pill so ticks don't re-render the question subtree 
 const TimerPill = memo(function TimerPill({ seconds, className = "", style }) {
   return (
     <span className={`chip accent timer-pill ${className}`} style={style}>
@@ -84,7 +84,7 @@ export default function StudentLivePage() {
       ? quiz.questions[currentIndex]
       : null;
 
-  /* ---------- derived values for stability ---------- */
+  // derived values for stability
   const qKind = useMemo(() => qType(currentQ), [currentQ]);
   const isChoice = qKind === "mcq" || qKind === "poll";
   const readyForChoices = useMemo(
@@ -94,7 +94,7 @@ export default function StudentLivePage() {
   // stable key used in deps & as React key
   const qKey = currentQ?.id ?? currentIndex;
 
-  /* ---------- tick helpers ---------- */
+  //tick helper
   const stopTick = useCallback(() => {
     if (tickRef.current) {
       clearInterval(tickRef.current);
@@ -114,7 +114,7 @@ export default function StudentLivePage() {
     [currentQ, stopTick]
   );
 
-  /* ---------- initial fetch ---------- */
+  // initial fetch 
   useEffect(() => {
     (async () => {
       try {
@@ -130,7 +130,7 @@ export default function StudentLivePage() {
     })();
   }, [sessionId]);
 
-  /* ---------- submit (wrapped) ---------- */
+  //submit (wrapped)
   const handleSubmit = useCallback(
     async (isAuto = false) => {
       if (!currentQ || currentIndex < 0) return;
@@ -189,7 +189,7 @@ export default function StudentLivePage() {
     handleSubmitRef.current = handleSubmit;
   }, [handleSubmit]);
 
-  /* ---------- live socket ---------- */
+  // live socket
   useEffect(() => {
     const off = connectSession(sessionId, async (evt) => {
       const d = evt?.data || {};
@@ -296,7 +296,7 @@ export default function StudentLivePage() {
     return () => off && off();
   }, [sessionId, startTick, stopTick, currentQ, snap?.status]);
 
-  /* ---------- when the question changes, (re)seed the timer ---------- */
+  /* --- when the question changes, (re)seed the timer ----- */
   useEffect(() => {
     autosubmittedRef.current = false;
     setSubmitted(false);
@@ -340,7 +340,7 @@ export default function StudentLivePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, quiz]);
 
-  /* ---------- pause/resume reacts to status WITHOUT resetting remaining ---------- */
+  /* -- pause/resume reacts to status WITHOUT resetting remaining ---- */
   useEffect(() => {
     if (!currentQ) return;
     if (snap?.status === "active") {
@@ -351,7 +351,7 @@ export default function StudentLivePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snap?.status, currentQ]);
 
-  /* ---------- blur any stray focused text input when a choice Q appears ---------- */
+  /* -------- blur any stray focused text input when a choice Q appears ---- */
   useEffect(() => {
     if (!isChoice) return;
     const el = document.activeElement;
@@ -363,7 +363,7 @@ export default function StudentLivePage() {
     }
   }, [isChoice, qKey]);
 
-  /* ---------- autosubmit when time hits zero ---------- */
+  /* --- autosubmit when time hits zero ------- */
   useEffect(() => {
     if (!currentQ) return;
     if (secondsLeft === 0 && seededRef.current && !autosubmittedRef.current) {
@@ -373,18 +373,18 @@ export default function StudentLivePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [secondsLeft]);
 
-  /* ---------- navigate on completion ---------- */
+  /* -- navigate on completion--- */
   useEffect(() => {
     if (snap?.status === "completed") {
       navigate(`/s/sessions/${sessionId}/done`, { replace: true });
     }
   }, [snap?.status, navigate, sessionId]);
 
-  /* ---------- compute locked BEFORE memo ---------- */
+  // compute locked BEFORE memo 
   const locked =
     (snap?.status !== "active") || submitted || (secondsLeft ?? 0) <= 0 || isSubmitting;
 
-  /* ---------- memoized QuestionPlayer element (prevents iOS jitter) ---------- */
+  // memoized QuestionPlayer element (prevents iOS jitter) 
   const qpEl = useMemo(
     () => (
       <QuestionPlayer
@@ -398,7 +398,7 @@ export default function StudentLivePage() {
     [qKey, value, locked,currentQ]
   );
 
-  /* ---------- render ---------- */
+  // render 
   if (loading || !snap || !quiz) {
     return (
       <>

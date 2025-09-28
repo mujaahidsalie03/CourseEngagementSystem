@@ -7,7 +7,7 @@ const courseController = require('../controllers/courseController');
 // List my courses (lecturer = teaching, student = enrolled)
 router.get('/', auth, courseController.listMineOrEnrolled);
 
-// Create a course (lecturer only)
+// Create a course (lecturer onlys)
 router.post('/', auth, requireRole('lecturer'), courseController.create);
 
 // Get course by ID

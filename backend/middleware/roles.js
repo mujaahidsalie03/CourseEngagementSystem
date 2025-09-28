@@ -1,4 +1,12 @@
 // middleware/roles.js
+// middleware/roles.js
+// Role-based access control (RBAC) middleware.
+// Usage:
+//   const requireRole = require('./middleware/roles');
+//   app.post('/api/courses', auth, requireRole('lecturer'), handler);
+//   app.delete('/api/quizzes/:id', auth, requireRole(['lecturer','admin']), handler);
+//
+// Assumes a prior auth middleware has set req.user = { _id, role }.
 const requireRole = (allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
